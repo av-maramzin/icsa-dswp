@@ -6,10 +6,11 @@ Currently, under development.
 Goals
 -----
 
-Decoupled Software Pipelining (DSWP) is an automatic thread extraction
-technique [Ottoni, 2005]. There have been previous attempts at implementing
-it ([2011 project] and [2013 project]), but the efforts resulted in unfinished
-and unmaintainable solutions.
+Decoupled Software Pipelining (DSWP) is an automatic thread extraction technique
+[Ottoni, 2005](http://dl.acm.org/citation.cfm?id=1100543). There have been
+previous attempts at implementing it ([2011 project](http://www.cs.cmu.edu/~fuyaoz/courses/15745/)
+and [2013 project](http://www.cs.cmu.edu/~avelingk/compilers/)), but the efforts
+resulted in unfinished and unmaintainable solutions.
 
 Therefore, the goals of this project are to provide a complete, reusable and
 maintainable implementation of the technique, which can then be integrated in
@@ -49,7 +50,3 @@ The `pass` directory contains an LLVM 3.7.0 loop pass that implements DSWP.
 The `test` directory contains example programs on which the DSWP pass can be
 tested and demonstrated. Run `tools/test.py` in order to test that the pass
 maintains the semantics of the test programs.
-
-[Ottoni, 2005][http://dl.acm.org/citation.cfm?id=1100543]
-[2011 project][http://www.cs.cmu.edu/~fuyaoz/courses/15745/]
-[2013 project][http://www.cs.cmu.edu/~avelingk/compilers/]
