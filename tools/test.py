@@ -4,40 +4,45 @@ from os import listdir, chdir, remove, getcwd
 from os.path import isfile, join, dirname, abspath, splitext
 from subprocess import Popen, PIPE
 
+def printerror(msg):
+  print 'ERROR in testing infrastructure: ' + msg
+
 def issource(filename):
   ext = splitext(filename)[1]
   return ext == '.cpp'
-
-def listsrc():
-  srcs = [ f for f in listdir('.') if isfile(f) and issource(f) ]
-  if not 1 == len(srcs):
-    msg = 'ERROR in testing infrastructure: expected exactly 1 source file ' + \
-          'testing directory ' + getcwd() + '; found ' + str(srcs) + ' instead.'
-    print msg
-    return None
-  else:
-    return srcs[0]
 
 def genbytecode(src):
   cmd = 'clang++ -c -emit-llvm ' + src
   p = Popen(cmd.split(' '), stdout=PIPE, stderr=PIPE)
   output, errors = p.communicate()
-  return splitext(src)[0] + '.bc'
+  if errors == '':
+    return splitext(src)[0] + '.bc'
+  else:
+    printerror('bytecode gen failed with errors:\n' + errors)
+    return None
 
 def optimize(bc):
   base, ext = splitext(bc)
   obc = base + '-dswp' + ext
-  cmd = 'opt -load ../../build/pass/libdswp.so -icsa-dswp ' + bc + ' -o ' + obc
+  cmd = 'opt -load ../build/pass/libdswp.so -icsa-dswp ' + bc + ' -o ' + obc
   p = Popen(cmd.split(' '), stdout=PIPE, stderr=PIPE)
   output, errors = p.communicate()
-  return obc
+  if errors == '':
+    return obc
+  else:
+    printerror('optimization failed with errors:\n' + errors)
+    return None
 
 def genexec(bc):
   execname = './' + splitext(bc)[0] + '.out'
   cmd = 'clang++ ' + bc + ' -o ' + execname
   p = Popen(cmd.split(' '), stdout=PIPE, stderr=PIPE)
   output, errors = p.communicate()
-  return execname
+  if errors == '':
+    return execname
+  else:
+    printerror('exec gen failed with errors:\n' + errors)
+    return None
 
 def execcompare(execA, execB):
   # any order:
@@ -60,29 +65,25 @@ def execcompare(execA, execB):
 # Run from project's root dir.
 chdir('test')
 
-testdirs = [ d for d in listdir('.') if not isfile(d) ]
+srcs = [ f for f in listdir('.') if isfile(f) and issource(f) ]
 
-# parloop
-for d in testdirs:
-  chdir(d)
-
-  src = listsrc()
-  if src is None:
-    continue
+print "ICSA-DSWP pass correctness tests"
+for src in srcs:
+  bc       = None
+  execorig = None
+  obc      = None
+  execopt  = None
 
   bc = genbytecode(src)
-  # any order:
-  # group B
-  execorig = genexec(bc)
-  # group A
-  obc = optimize(bc)
-  execopt = genexec(obc)
-  # end any order
-  success = execcompare(execorig, execopt)
-
-  print 'Test', d, 'result:', "SUCCESS" if success else "FAILURE"
+  if not bc is None:
+    execorig = genexec(bc)
+    obc = optimize(bc)
+    if not obc is None:
+      execopt = genexec(obc)
+      if not execorig is None and not execopt is None:
+        success = execcompare(execorig, execopt)
+        print splitext(src)[0], '-', "SUCCESS" if success else "FAILURE"
 
   for f in [bc, execorig, obc, execopt]:
-    remove(f)
-
-  chdir('..')
+    if not f is None:
+      remove(f)
