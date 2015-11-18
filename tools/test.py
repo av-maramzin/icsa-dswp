@@ -1,6 +1,6 @@
 #! /usr/bin/python
 # Only Linux is supported.
-from os import listdir, chdir, remove
+from os import listdir, chdir, remove, getcwd
 from os.path import isfile, join, dirname, abspath, splitext
 from subprocess import Popen, PIPE
 
@@ -10,8 +10,13 @@ def issource(filename):
 
 def listsrc():
   srcs = [ f for f in listdir('.') if isfile(f) and issource(f) ]
-  assert(1 == len(srcs))
-  return srcs[0]
+  if not 1 == len(srcs):
+    msg = 'ERROR in testing infrastructure: expected exactly 1 source file ' + \
+          'testing directory ' + getcwd() + '; found ' + str(srcs) + ' instead.'
+    print msg
+    return None
+  else:
+    return srcs[0]
 
 def genbytecode(src):
   cmd = 'clang++ -c -emit-llvm ' + src
@@ -52,8 +57,8 @@ def execcompare(execA, execB):
     print outB
     return False
 
-# Run from tests dir.
-chdir(dirname( abspath( __file__ ) ))
+# Run from project's root dir.
+chdir('test')
 
 testdirs = [ d for d in listdir('.') if not isfile(d) ]
 
@@ -62,6 +67,9 @@ for d in testdirs:
   chdir(d)
 
   src = listsrc()
+  if src is None:
+    continue
+
   bc = genbytecode(src)
   # any order:
   # group B
@@ -74,7 +82,7 @@ for d in testdirs:
 
   print 'Test', d, 'result:', "SUCCESS" if success else "FAILURE"
 
-  for f in [src, bc, execorig, obc, execopt]:
+  for f in [bc, execorig, obc, execopt]:
     remove(f)
 
   chdir('..')
