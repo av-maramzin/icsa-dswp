@@ -3,6 +3,40 @@
 from os import listdir, chdir, remove, getcwd
 from os.path import isfile, join, dirname, abspath, splitext
 from subprocess import Popen, PIPE
+from sys import argv
+
+def main():
+  doclean = True
+  # TODO(Stanm): make arg parsing more robust
+  if len(argv) == 2 and argv[1] == '--no-clean':
+    doclean = False
+
+  # Run from project's root dir.
+  chdir('test')
+
+  srcs = [ f for f in listdir('.') if isfile(f) and issource(f) ]
+
+  print "ICSA-DSWP pass correctness tests"
+  for src in srcs:
+    bc       = None
+    execorig = None
+    obc      = None
+    execopt  = None
+
+    bc = genbytecode(src)
+    if not bc is None:
+      execorig = genexec(bc)
+      obc = optimize(bc)
+      if not obc is None:
+        execopt = genexec(obc)
+        if not execorig is None and not execopt is None:
+          success = execcompare(execorig, execopt)
+          print splitext(src)[0], '-', "SUCCESS" if success else "FAILURE"
+
+    if doclean:
+      for f in [bc, execorig, obc, execopt]:
+        if not f is None:
+          remove(f)
 
 def printerror(msg):
   print 'ERROR in testing infrastructure: ' + msg
@@ -62,28 +96,5 @@ def execcompare(execA, execB):
     print outB
     return False
 
-# Run from project's root dir.
-chdir('test')
-
-srcs = [ f for f in listdir('.') if isfile(f) and issource(f) ]
-
-print "ICSA-DSWP pass correctness tests"
-for src in srcs:
-  bc       = None
-  execorig = None
-  obc      = None
-  execopt  = None
-
-  bc = genbytecode(src)
-  if not bc is None:
-    execorig = genexec(bc)
-    obc = optimize(bc)
-    if not obc is None:
-      execopt = genexec(obc)
-      if not execorig is None and not execopt is None:
-        success = execcompare(execorig, execopt)
-        print splitext(src)[0], '-', "SUCCESS" if success else "FAILURE"
-
-  for f in [bc, execorig, obc, execopt]:
-    if not f is None:
-      remove(f)
+if __name__ == "__main__":
+    main()
