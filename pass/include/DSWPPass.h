@@ -10,6 +10,9 @@ using llvm::LPPassManager;
 #include "llvm/PassAnalysisSupport.h"
 using llvm::AnalysisUsage;
 
+#include <string>
+using std::string;
+
 class DSWPPass : public LoopPass {
 public:
   static char ID;
@@ -19,4 +22,7 @@ public:
   bool doInitialization(Loop *L, LPPassManager &LPM) override;
 };
 
+#include <vector>
+
+std::vector<bool> foo();
 #endif

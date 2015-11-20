@@ -3,13 +3,17 @@
 from os import listdir, chdir, remove, getcwd
 from os.path import isfile, join, dirname, abspath, splitext
 from subprocess import Popen, PIPE
-from sys import argv
+from sys import argv, stdout
 
 def main():
   doclean = True
+  verbose = False
   # TODO(Stanm): make arg parsing more robust
-  if len(argv) == 2 and argv[1] == '--no-clean':
-    doclean = False
+  if len(argv) == 2:
+    if argv[1] == '--no-clean':
+      doclean = False
+    elif argv[1] == '--verbose':
+      verbose = True
 
   # Run from project's root dir.
   chdir('test')
@@ -26,7 +30,7 @@ def main():
     bc = genbytecode(src)
     if not bc is None:
       execorig = genexec(bc)
-      obc = optimize(bc)
+      obc = optimize(bc, verbose)
       if not obc is None:
         execopt = genexec(obc)
         if not execorig is None and not execopt is None:
@@ -55,13 +59,15 @@ def genbytecode(src):
     printerror('bytecode gen failed with errors:\n' + errors)
     return None
 
-def optimize(bc):
+def optimize(bc, verbose = False):
   base, ext = splitext(bc)
   obc = base + '-dswp' + ext
   cmd = 'opt -load ../build/pass/libdswp.so -icsa-dswp ' + bc + ' -o ' + obc
   p = Popen(cmd.split(' '), stdout=PIPE, stderr=PIPE)
   output, errors = p.communicate()
   if errors == '':
+    if verbose:
+      stdout.write(output)
     return obc
   else:
     printerror('optimization failed with errors:\n' + errors)
