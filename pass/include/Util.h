@@ -14,25 +14,33 @@ using std::cout;
 
 void info(string msg) {
   cout << "[DSWP] " << msg << '\n';
+
+  return;
 }
 
 template<typename T>
-void debug(string label, T value) {
+void debug(const string &label, const T value) {
   cout << "[DSWP-DEBUG] " << label << ": " << value << '\n';
+
+  return;
 }
 
 template<>
-void debug<Instruction *>(string label, Instruction *inst) {
+void debug<const Instruction *>(const string &label, const Instruction *inst) {
   cout << "[DSWP-DEBUG] " << label << ": ";
   raw_os_ostream out(cout);
   inst->print(out);
   cout << '\n';
+
+  return;
 }
 
 template<>
-void debug<BasicBlock *>(string label, BasicBlock *BB) {
+void debug<const BasicBlock *>(const string &label, const BasicBlock *BB) {
   cout << "[DSWP-DEBUG] " << label << "\n";
   raw_os_ostream out(cout);
   BB->print(out);
   cout << '\n';
+
+  return;
 }
