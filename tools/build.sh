@@ -18,7 +18,7 @@ cd build
 #- CMAKE_EXPORT_COMPILE_COMMANDS exports the project's compilation db
 #  (e.g. use with YCM)
 
-CC=clang \
+CC=clang CXX=clang++ \
 cmake \
   -DLLVM_DIR=$(llvm-config --prefix)/share/llvm/cmake/ \
   -DCMAKE_BUILD_TYPE=DEBUG \
