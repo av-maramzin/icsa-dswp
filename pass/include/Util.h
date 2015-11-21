@@ -1,5 +1,9 @@
 // Implemented in Util.cpp.
 
+#ifndef ICSA_DSWP_UTIL_H
+#define ICSA_DSWP_UTIL_H
+
+
 #include "llvm/IR/BasicBlock.h"
 using llvm::BasicBlock;
 #include "llvm/IR/Instruction.h"
@@ -44,3 +48,7 @@ void debug<const BasicBlock *>(const string &label, const BasicBlock *BB) {
 
   return;
 }
+
+
+#endif // ICSA_DSWP_UTIL_H
+
