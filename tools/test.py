@@ -1,7 +1,7 @@
 #! /usr/bin/python
 # Only Linux is supported.
 from os import listdir, chdir, remove, getcwd
-from os.path import isfile, join, dirname, abspath, splitext
+from os.path import isfile, join, dirname, abspath, realpath, splitext
 from subprocess import Popen, PIPE
 from sys import argv, stdout
 import argparse
@@ -14,8 +14,10 @@ def main():
     help='do not clean up generated files upon termination')
   args = parser.parse_args()
 
-  # Run from project's root dir.
-  chdir('test')
+  # run from project's root dir
+  if not __file__ is None:
+    script_abs_dir = dirname(realpath(__file__))
+    chdir(script_abs_dir + '/../' + 'test')
 
   srcs = [ f for f in listdir('.') if isfile(f) and issource(f) ]
 
