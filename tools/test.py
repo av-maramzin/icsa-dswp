@@ -4,16 +4,15 @@ from os import listdir, chdir, remove, getcwd
 from os.path import isfile, join, dirname, abspath, splitext
 from subprocess import Popen, PIPE
 from sys import argv, stdout
+import argparse
 
 def main():
-  doclean = True
-  verbose = False
-  # TODO(Stanm): make arg parsing more robust
-  if len(argv) == 2:
-    if argv[1] == '--no-clean':
-      doclean = False
-    elif argv[1] == '--verbose':
-      verbose = True
+  parser = argparse.ArgumentParser(description='Execute plugin basic tests')
+  parser.add_argument('-V','--verbose', dest='verbose', action='store_true', 
+    help='see verbose output during execution')
+  parser.add_argument('-n','--no-clean', dest='doclean', action='store_false',
+    help='do not clean up generated files upon termination')
+  args = parser.parse_args()
 
   # Run from project's root dir.
   chdir('test')
@@ -30,14 +29,14 @@ def main():
     bc = genbytecode(src)
     if not bc is None:
       execorig = genexec(bc)
-      obc = optimize(bc, verbose)
+      obc = optimize(bc, args.verbose)
       if not obc is None:
         execopt = genexec(obc)
         if not execorig is None and not execopt is None:
           success = execcompare(execorig, execopt)
           print splitext(src)[0], '-', "SUCCESS" if success else "FAILURE"
 
-    if doclean:
+    if args.doclean:
       for f in [bc, execorig, obc, execopt]:
         if not f is None:
           remove(f)
