@@ -21,10 +21,10 @@ def main():
 
   print "ICSA-DSWP pass correctness tests"
   for src in srcs:
-    bc       = None
+    bc = None
     execorig = None
-    obc      = None
-    execopt  = None
+    obc = None
+    execopt = None
 
     bc = genbytecode(src)
     if not bc is None:
