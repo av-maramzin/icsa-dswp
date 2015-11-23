@@ -18,10 +18,8 @@ using std::string;
 #include "Util.h"
 
 char DSWPPass::ID = 0;
-RegisterPass<DSWPPass> X(
-  "icsa-dswp",
-  "ICSA implementation of Decoupled Software Pipeline"
-);
+RegisterPass<DSWPPass> X("icsa-dswp",
+                         "ICSA implementation of Decoupled Software Pipeline");
 
 DSWPPass::DSWPPass() : LoopPass(ID) {}
 
@@ -66,6 +64,4 @@ bool DSWPPass::runOnLoop(Loop *L, LPPassManager &LPM) {
   return true;
 }
 
-bool DSWPPass::doInitialization(Loop *L, LPPassManager &LPM) {
-  return true;
-}
+bool DSWPPass::doInitialization(Loop *L, LPPassManager &LPM) { return true; }

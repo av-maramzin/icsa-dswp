@@ -3,7 +3,6 @@
 #ifndef ICSA_DSWP_UTIL_H
 #define ICSA_DSWP_UTIL_H
 
-
 #include "llvm/IR/BasicBlock.h"
 using llvm::BasicBlock;
 #include "llvm/IR/Instruction.h"
@@ -20,17 +19,14 @@ using std::ostream;
 using std::cout;
 using std::endl;
 
-enum class log_severity : unsigned int {
-  INFO,
-  DEBUG
-};
+enum class log_severity : unsigned int { INFO, DEBUG };
 
 void log_print_impl() {
   cout << endl;
   return;
 }
 
-template<typename... Ts>
+template <typename... Ts>
 void log_print_impl(const BasicBlock *BB, Ts... args) {
   raw_os_ostream roos(cout);
   BB->print(roos);
@@ -39,14 +35,13 @@ void log_print_impl(const BasicBlock *BB, Ts... args) {
   return;
 }
 
-template<typename... Ts>
-void log_print_impl(BasicBlock *BB, Ts... args) {
+template <typename... Ts> void log_print_impl(BasicBlock *BB, Ts... args) {
   log_print_impl(static_cast<const BasicBlock *>(BB), forward<Ts>(args)...);
 
   return;
 }
 
-template<typename... Ts>
+template <typename... Ts>
 void log_print_impl(const Instruction *inst, Ts... args) {
   raw_os_ostream roos(cout);
   inst->print(roos);
@@ -55,18 +50,15 @@ void log_print_impl(const Instruction *inst, Ts... args) {
   return;
 }
 
-template<typename... Ts>
-void log_print_impl(Instruction *inst, Ts... args) {
+template <typename... Ts> void log_print_impl(Instruction *inst, Ts... args) {
   log_print_impl(static_cast<const Instruction *>(inst), forward<Ts>(args)...);
 
   return;
 }
 
-
 // general case
 
-template<typename T, typename... Ts>
-void log_print_impl(T v, Ts... args) {
+template <typename T, typename... Ts> void log_print_impl(T v, Ts... args) {
   cout << v;
   log_print_impl(args...);
 
@@ -75,9 +67,8 @@ void log_print_impl(T v, Ts... args) {
 
 //
 
-template<log_severity severity, typename... Ts>
-void log_print(Ts&&... args) {
-  switch(severity) {
+template <log_severity severity, typename... Ts> void log_print(Ts &&... args) {
+  switch (severity) {
   case (log_severity::INFO):
     cout << "[INFO] ";
     break;
@@ -96,11 +87,7 @@ void log_print(Ts&&... args) {
   return;
 }
 
-
-
 #define LOG_INFO log_print<log_severity::INFO>
 #define LOG_DEBUG log_print<log_severity::DEBUG>
 
-
 #endif // ICSA_DSWP_UTIL_H
-
