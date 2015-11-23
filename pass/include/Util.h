@@ -11,43 +11,95 @@ using llvm::Instruction;
 #include "llvm/Support/raw_os_ostream.h"
 using llvm::raw_os_ostream;
 
+#include <utility>
+using std::forward;
 #include <string>
 using std::string;
 #include <iostream>
+using std::ostream;
 using std::cout;
+using std::endl;
 
-void info(string msg) {
-  cout << "[DSWP] " << msg << '\n';
+enum class log_severity : unsigned int {
+  INFO,
+  DEBUG
+};
+
+void log_print_impl() {
+  cout << endl;
+  return;
+}
+
+template<typename... Ts>
+void log_print_impl(const BasicBlock *BB, Ts... args) {
+  raw_os_ostream roos(cout);
+  BB->print(roos);
+  log_print_impl(args...);
 
   return;
 }
 
-template<typename T>
-void debug(const string &label, const T value) {
-  cout << "[DSWP-DEBUG] " << label << ": " << value << '\n';
+template<typename... Ts>
+void log_print_impl(BasicBlock *BB, Ts... args) {
+  log_print_impl(static_cast<const BasicBlock *>(BB), forward<Ts>(args)...);
 
   return;
 }
 
-template<>
-void debug<const Instruction *>(const string &label, const Instruction *inst) {
-  cout << "[DSWP-DEBUG] " << label << ": ";
-  raw_os_ostream out(cout);
-  inst->print(out);
-  cout << '\n';
+template<typename... Ts>
+void log_print_impl(const Instruction *inst, Ts... args) {
+  raw_os_ostream roos(cout);
+  inst->print(roos);
+  log_print_impl(args...);
 
   return;
 }
 
-template<>
-void debug<const BasicBlock *>(const string &label, const BasicBlock *BB) {
-  cout << "[DSWP-DEBUG] " << label << "\n";
-  raw_os_ostream out(cout);
-  BB->print(out);
-  cout << '\n';
+template<typename... Ts>
+void log_print_impl(Instruction *inst, Ts... args) {
+  log_print_impl(static_cast<const Instruction *>(inst), forward<Ts>(args)...);
 
   return;
 }
+
+
+// general case
+
+template<typename T, typename... Ts>
+void log_print_impl(T v, Ts... args) {
+  cout << v;
+  log_print_impl(args...);
+
+  return;
+}
+
+//
+
+template<log_severity severity, typename... Ts>
+void log_print(Ts&&... args) {
+  switch(severity) {
+  case (log_severity::INFO):
+    cout << "[INFO] ";
+    break;
+  case (log_severity::DEBUG):
+    cout << "[DEBUG] ";
+    break;
+  default:
+    cout << "[UNKNOWN] ";
+    break;
+  }
+
+  cout << "ICSA-DSWP: ";
+
+  log_print_impl(forward<Ts>(args)...);
+
+  return;
+}
+
+
+
+#define LOG_INFO log_print<log_severity::INFO>
+#define LOG_DEBUG log_print<log_severity::DEBUG>
 
 
 #endif // ICSA_DSWP_UTIL_H
