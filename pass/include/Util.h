@@ -11,6 +11,8 @@ using llvm::Instruction;
 #include "llvm/Support/raw_os_ostream.h"
 using llvm::raw_os_ostream;
 
+#include <utility>
+using std::forward;
 #include <string>
 using std::string;
 #include <iostream>
@@ -23,69 +25,81 @@ enum class log_severity : unsigned int {
   DEBUG
 };
 
-template<const string &prefix>
-class logger {
-public:
-  template<log_severity severity, typename... Ts>
-  void print(Ts... args) {
-    switch(severity) {
-      case (log_severity::INFO):
-        cout << "[INFO] ";
-        break;
-      case (log_severity::DEBUG):
-        cout << "[DEBUG] ";
-        break;
-      default:
-        cout << "[UNKNOWN] ";
-        break;
-    }
+void log_print_impl() {
+  cout << endl;
+  return;
+}
 
-    cout << prefix << ": ";
+template<typename... Ts>
+void log_print_impl(const BasicBlock *BB, Ts... args) {
+  raw_os_ostream roos(cout);
+  BB->print(roos);
+  log_print_impl(args...);
 
-    print_impl(args...);
+  return;
+}
 
-    return;
+template<typename... Ts>
+void log_print_impl(BasicBlock *BB, Ts... args) {
+  log_print_impl(static_cast<const BasicBlock *>(BB), forward<Ts>(args)...);
+
+  return;
+}
+
+template<typename... Ts>
+void log_print_impl(const Instruction *inst, Ts... args) {
+  raw_os_ostream roos(cout);
+  inst->print(roos);
+  log_print_impl(args...);
+
+  return;
+}
+
+template<typename... Ts>
+void log_print_impl(Instruction *inst, Ts... args) {
+  log_print_impl(static_cast<const Instruction *>(inst), forward<Ts>(args)...);
+
+  return;
+}
+
+
+// general case
+
+template<typename T, typename... Ts>
+void log_print_impl(T v, Ts... args) {
+  cout << v;
+  log_print_impl(args...);
+
+  return;
+}
+
+//
+
+template<log_severity severity, typename... Ts>
+void log_print(Ts&&... args) {
+  switch(severity) {
+  case (log_severity::INFO):
+    cout << "[INFO] ";
+    break;
+  case (log_severity::DEBUG):
+    cout << "[DEBUG] ";
+    break;
+  default:
+    cout << "[UNKNOWN] ";
+    break;
   }
 
-private:
-  void print_impl() {
-    cout << endl;
-    return;
-  }
+  cout << "ICSA-DSWP: ";
 
-  template<typename T, typename... Ts>
-  void print_impl(T v, Ts... args) {
-    cout << v;
-    print_impl(args...);
+  log_print_impl(forward<Ts>(args)...);
 
-    return;
-  }
+  return;
+}
 
-  template<typename... Ts>
-  void print_impl(BasicBlock *BB, Ts... args) {
-    raw_os_ostream roos(cout);
-    BB->print(roos);
-    print_impl(args...);
 
-    return;
-  }
 
-  template<typename... Ts>
-  void print_impl(Instruction *inst, Ts... args) {
-    raw_os_ostream roos(cout);
-    inst->print(roos);
-    print_impl(args...);
-
-    return;
-  }
-};
-
-extern const string log_prefix{"ICSA-DSWP"};
-
-static logger<log_prefix> dswp_logger;
-
-#define LOG_INFO dswp_logger.print<log_severity::INFO>
-#define LOG_DEBUG dswp_logger.print<log_severity::DEBUG>
+#define LOG_INFO log_print<log_severity::INFO>
+#define LOG_DEBUG log_print<log_severity::DEBUG>
 
 
 #endif // ICSA_DSWP_UTIL_H
