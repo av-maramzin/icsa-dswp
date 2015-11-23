@@ -14,40 +14,78 @@ using llvm::raw_os_ostream;
 #include <string>
 using std::string;
 #include <iostream>
+using std::ostream;
 using std::cout;
+using std::endl;
 
-void info(string msg) {
-  cout << "[DSWP] " << msg << '\n';
+enum class log_severity : unsigned int {
+  INFO,
+  DEBUG
+};
 
-  return;
-}
+template<const string &prefix>
+class logger {
+public:
+  template<log_severity severity, typename... Ts>
+  void print(Ts... args) {
+    switch(severity) {
+      case (log_severity::INFO):
+        cout << "[INFO] ";
+        break;
+      case (log_severity::DEBUG):
+        cout << "[DEBUG] ";
+        break;
+      default:
+        cout << "[UNKNOWN] ";
+        break;
+    }
 
-template<typename T>
-void debug(const string &label, const T value) {
-  cout << "[DSWP-DEBUG] " << label << ": " << value << '\n';
+    cout << prefix << ": ";
 
-  return;
-}
+    print_impl(args...);
 
-template<>
-void debug<const Instruction *>(const string &label, const Instruction *inst) {
-  cout << "[DSWP-DEBUG] " << label << ": ";
-  raw_os_ostream out(cout);
-  inst->print(out);
-  cout << '\n';
+    return;
+  }
 
-  return;
-}
+private:
+  void print_impl() {
+    cout << endl;
+    return;
+  }
 
-template<>
-void debug<const BasicBlock *>(const string &label, const BasicBlock *BB) {
-  cout << "[DSWP-DEBUG] " << label << "\n";
-  raw_os_ostream out(cout);
-  BB->print(out);
-  cout << '\n';
+  template<typename T, typename... Ts>
+  void print_impl(T v, Ts... args) {
+    cout << v;
+    print_impl(args...);
 
-  return;
-}
+    return;
+  }
+
+  template<typename... Ts>
+  void print_impl(BasicBlock *BB, Ts... args) {
+    raw_os_ostream roos(cout);
+    BB->print(roos);
+    print_impl(args...);
+
+    return;
+  }
+
+  template<typename... Ts>
+  void print_impl(Instruction *inst, Ts... args) {
+    raw_os_ostream roos(cout);
+    inst->print(roos);
+    print_impl(args...);
+
+    return;
+  }
+};
+
+extern const string log_prefix{"ICSA-DSWP"};
+
+static logger<log_prefix> dswp_logger;
+
+#define LOG_INFO dswp_logger.print<log_severity::INFO>
+#define LOG_DEBUG dswp_logger.print<log_severity::DEBUG>
 
 
 #endif // ICSA_DSWP_UTIL_H
