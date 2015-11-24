@@ -22,7 +22,4 @@ public:
   bool doInitialization(Loop *L, LPPassManager &LPM) override;
 };
 
-#include <vector>
-
-std::vector<bool> foo();
 #endif
