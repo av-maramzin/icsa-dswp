@@ -44,15 +44,22 @@ completed - it may not describe its working state.
 
 ### Structure
 
-The `pass` directory contains an LLVM 3.7.0 loop pass that implements DSWP.
+The `pass` directory contains the code for `libdswp.so` - a library that
+contains an LLVM 3.7.0 loop pass that implements DSWP and a function pass that
+builds the [Control Dependence Graph][cytron1989] of a function.
 
 The `test` directory contains example programs on which the DSWP pass can be
 tested and demonstrated. Run `tools/test.py` in order to test that the pass
 maintains the semantics of the test programs.
 
+Optionally, `tools/test.py` takes two arguments:
+
+ * `--no-clean` or `-n` inhibits the removal of the temporary files during
+   testing; they can then be inspected and used for further transformations
+ * `--verbose` or `-V` shows the standard output of running the DSWP pass.
 
 [ottoni2005]: (http://dl.acm.org/citation.cfm?id=1100543)
 [2011-dswp-prj]: (http://www.cs.cmu.edu/~fuyaoz/courses/15745/)
 [2013-dswp-prj]: (http://www.cs.cmu.edu/~avelingk/compilers/)
-
+[cytron1989]: (http://dl.acm.org/citation.cfm?id=75280)
 
