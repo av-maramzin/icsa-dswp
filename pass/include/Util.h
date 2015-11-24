@@ -15,16 +15,13 @@ using std::forward;
 #include <string>
 using std::string;
 #include <iostream>
-using std::ostream;
 using std::cout;
 using std::endl;
 
 enum class log_severity : unsigned int { INFO, DEBUG };
 
-void log_print_impl() {
-  cout << endl;
-  return;
-}
+// Implemented in Util.cpp.
+void log_print_impl();
 
 template <typename... Ts>
 void log_print_impl(const BasicBlock *BB, Ts... args) {
