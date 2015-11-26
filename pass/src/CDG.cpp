@@ -56,7 +56,6 @@ bool ControlDependenceGraph::runOnFunction(Function &F) {
 
   map<BasicBlock *, set<BasicBlock *> *> dominance_frontier;
 
-
   // Traversing it in the opposite direction is bottom up.
   while (!top_down_traversal.empty()) {
     DomTreeNode *current = top_down_traversal.back();

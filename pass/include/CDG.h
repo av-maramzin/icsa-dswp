@@ -39,8 +39,8 @@ class ControlDependenceNode {
 
 public:
   typedef typename vector<ControlDependenceNode *>::iterator iterator;
-  typedef typename vector<ControlDependenceNode *>::const_iterator
-      const_iterator;
+  typedef
+      typename vector<ControlDependenceNode *>::const_iterator const_iterator;
 
   iterator begin() { return Children.begin(); }
   iterator end() { return Children.end(); }
@@ -104,10 +104,11 @@ class ControlDependenceGraph : public FunctionPass {
 private:
   typedef map<BasicBlock *, unique_ptr<ControlDependenceNode>> CDGNodeMapType;
   CDGNodeMapType CDGNodes;
+
 public:
   static char ID;
 
-  ControlDependenceGraph() : FunctionPass(ID) { }
+  ControlDependenceGraph() : FunctionPass(ID) {}
 
   bool runOnFunction(Function &F) override;
 
@@ -124,11 +125,12 @@ public:
   bool dependsOn(BasicBlock *A, BasicBlock *B) const;
 
   /// Get all nodes that have a control dependence on R.
-  void getDependants(BasicBlock *R, SmallVectorImpl<BasicBlock *> &Result) const;
+  void getDependants(BasicBlock *R,
+                     SmallVectorImpl<BasicBlock *> &Result) const;
 
   void releaseMemory() override;
 
-  void print(raw_ostream &OS, const Module*) const override;
+  void print(raw_ostream &OS, const Module *) const override;
 };
 
 #endif
