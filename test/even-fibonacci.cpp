@@ -20,7 +20,9 @@ int main() {
   uint sum = 0;
   const uint MAX = 4000000;
   while (c <= MAX) {
-    if (0 == (c & 1)) sum += c;
+    if (0 == (c & 1)) {
+      sum += c;
+    }
     a = b;
     b = c;
     c = a + b;

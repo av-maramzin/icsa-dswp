@@ -1,6 +1,6 @@
 // Implemented in DSWPPass.cpp.
-#ifndef DSWPPASS_H
-#define DSWPPASS_H
+#ifndef ICSA_DSWP_PASS_H
+#define ICSA_DSWP_PASS_H
 
 #include "llvm/Analysis/LoopInfo.h"
 using llvm::Loop;
