@@ -1,5 +1,3 @@
-#include "CDGPrinter.h"
-
 #include <string>
 using std::string;
 #include <system_error>
@@ -25,6 +23,7 @@ using llvm::AnalysisUsage;
 using llvm::WriteGraph;
 
 #include "CDG.h"
+#include "CDGGraphTraits.h"
 
 namespace icsa {
 

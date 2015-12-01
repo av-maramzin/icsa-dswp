@@ -1,5 +1,3 @@
-#include "CFGPrinter.h"
-
 #include <string>
 using std::string;
 #include <system_error>
@@ -24,8 +22,11 @@ using llvm::AnalysisUsage;
 #include "llvm/Support/GraphWriter.h"
 using llvm::WriteGraph;
 
+#include "FuncGraphTraits.h"
+
 namespace icsa {
 
+// A custom printer that prints source code rather than LLVM code.
 struct CFGPrinter : public FunctionPass {
   static char ID;
   CFGPrinter() : FunctionPass(ID) {}

@@ -141,202 +141,71 @@ public:
 
   void print(raw_ostream &OS, const Module *) const override;
 
-  friend class cdg_iterator;
-  friend class cdg_const_iterator;
+  template <typename ValueType> friend class CDGBaseIterator;
 };
 
 // Iterator for all CDG nodes.
 
-class cdg_iterator
-    : public std::iterator<std::bidirectional_iterator_tag,
-                           ControlDependenceNode, int, ControlDependenceNode *,
-                           ControlDependenceNode *> {
-  typedef std::iterator<std::bidirectional_iterator_tag, ControlDependenceNode,
-                        int, ControlDependenceNode *,
-                        ControlDependenceNode *> super;
+template <typename ValueType>
+class CDGBaseIterator
+    : public std::iterator<std::bidirectional_iterator_tag, ValueType, int,
+                           ValueType *, ValueType *> {
+  typedef std::iterator<std::bidirectional_iterator_tag, ValueType, int,
+                        ValueType *, ValueType *> super;
 
 public:
   typedef typename super::pointer pointer;
   typedef typename super::reference reference;
-  typedef typename ControlDependenceGraph::CDGNodeMapType::const_iterator
-      CDGNodeMapIterator;
+  typedef ControlDependenceGraph::CDGNodeMapType::const_iterator IteratorType;
+  typedef CDGBaseIterator<ValueType> thisType;
 
 private:
   const ControlDependenceGraph &Graph;
-  CDGNodeMapIterator idx;
+  IteratorType idx;
 
 public:
-  // Begin iterator.
-  explicit inline cdg_iterator(const ControlDependenceGraph &G)
+  explicit inline CDGBaseIterator<ValueType>(const ControlDependenceGraph &G)
       : Graph(G), idx(G.CDGNodes.begin()) {}
 
-  // End iterator.
-  inline cdg_iterator(const ControlDependenceGraph &G, bool)
+  inline CDGBaseIterator<ValueType>(const ControlDependenceGraph &G, bool)
       : Graph(G), idx(G.CDGNodes.end()) {}
 
-  inline bool operator==(const cdg_iterator &x) const { return idx == x.idx; }
-  inline bool operator!=(const cdg_iterator &x) const { return !operator==(x); }
-
-  inline reference operator*() const { return idx->second.get(); }
-  inline pointer operator->() const { return operator*(); }
-
-  inline cdg_iterator &operator++() {
-    ++idx;
-    return *this;
+  inline bool operator==(const thisType &other) const {
+    return idx == other.idx;
   }
 
-  inline cdg_iterator operator++(int) {
-    cdg_iterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  inline cdg_iterator &operator--() {
-    --idx;
-    return *this;
-  }
-  inline cdg_iterator operator--(int) {
-    cdg_iterator tmp = *this;
-    --*this;
-    return tmp;
-  }
-};
-
-class cdg_const_iterator
-    : public std::iterator<
-          std::bidirectional_iterator_tag, const ControlDependenceNode, int,
-          const ControlDependenceNode *, const ControlDependenceNode *> {
-  typedef std::iterator<
-      std::bidirectional_iterator_tag, const ControlDependenceNode, int,
-      const ControlDependenceNode *, const ControlDependenceNode *> super;
-
-public:
-  typedef typename super::pointer pointer;
-  typedef typename super::reference reference;
-  typedef typename ControlDependenceGraph::CDGNodeMapType::const_iterator
-      CDGNodeMapIterator;
-
-private:
-  const ControlDependenceGraph &Graph;
-  CDGNodeMapIterator idx;
-
-public:
-  // Begin iterator.
-  explicit inline cdg_const_iterator(const ControlDependenceGraph &G)
-      : Graph(G), idx(G.CDGNodes.begin()) {}
-
-  // End iterator.
-  inline cdg_const_iterator(const ControlDependenceGraph &G, bool)
-      : Graph(G), idx(G.CDGNodes.end()) {}
-
-  inline bool operator==(const cdg_const_iterator &x) const {
-    return idx == x.idx;
-  }
-  inline bool operator!=(const cdg_const_iterator &x) const {
-    return !operator==(x);
+  inline bool operator!=(const thisType &other) const {
+    return !operator==(other);
   }
 
   inline reference operator*() const { return idx->second.get(); }
   inline pointer operator->() const { return operator*(); }
 
-  inline cdg_const_iterator &operator++() {
+  inline thisType &operator++() {
     ++idx;
     return *this;
   }
 
-  inline cdg_const_iterator operator++(int) {
-    cdg_const_iterator tmp = *this;
+  inline thisType operator++(int) {
+    thisType tmp = *this;
     ++*this;
     return tmp;
   }
 
-  inline cdg_const_iterator &operator--() {
+  inline thisType &operator--() {
     --idx;
     return *this;
   }
-  inline cdg_const_iterator operator--(int) {
-    cdg_const_iterator tmp = *this;
+
+  inline thisType operator--(int) {
+    thisType tmp = *this;
     --*this;
     return tmp;
   }
 };
 
-}
-using icsa::ControlDependenceNode;
-using icsa::ControlDependenceGraph;
-using icsa::cdg_iterator;
-using icsa::cdg_const_iterator;
-
-// GraphTraits for CDN and CDG.
-
-#include "llvm/ADT/GraphTraits.h"
-
-namespace llvm {
-
-template <> struct GraphTraits<ControlDependenceNode *> {
-  typedef ControlDependenceNode NodeType;
-  typedef ControlDependenceNode::iterator ChildIteratorType;
-
-  static NodeType *getEntryNode(ControlDependenceNode *CDN) { return CDN; }
-  static inline ChildIteratorType child_begin(NodeType *N) {
-    return N->begin();
-  }
-  static inline ChildIteratorType child_end(NodeType *N) { return N->end(); }
-};
-
-template <> struct GraphTraits<const ControlDependenceNode *> {
-  typedef const ControlDependenceNode NodeType;
-  typedef ControlDependenceNode::const_iterator ChildIteratorType;
-
-  static NodeType *getEntryNode(const ControlDependenceNode *CDN) {
-    return CDN;
-  }
-
-  static inline ChildIteratorType child_begin(NodeType *N) {
-    return N->begin();
-  }
-
-  static inline ChildIteratorType child_end(NodeType *N) { return N->end(); }
-};
-
-template <>
-struct GraphTraits<ControlDependenceGraph *>
-    : public GraphTraits<ControlDependenceNode *> {
-  static NodeType *getEntryNode(ControlDependenceGraph *CDG) {
-    return CDG->getRootNode();
-  }
-
-  typedef cdg_iterator nodes_iterator;
-
-  static nodes_iterator nodes_begin(ControlDependenceGraph *CDG) {
-    return cdg_iterator(*CDG);
-  }
-  static nodes_iterator nodes_end(ControlDependenceGraph *CDG) {
-    return cdg_iterator(*CDG, true);
-  }
-  static size_t size(ControlDependenceGraph *CDG) { return CDG->getNumNodes(); }
-};
-
-template <>
-struct GraphTraits<const ControlDependenceGraph *>
-    : public GraphTraits<const ControlDependenceNode *> {
-  static NodeType *getEntryNode(const ControlDependenceGraph *CDG) {
-    return CDG->getRootNode();
-  }
-
-  typedef cdg_const_iterator nodes_iterator;
-
-  static nodes_iterator nodes_begin(const ControlDependenceGraph *CDG) {
-    return cdg_const_iterator(*CDG);
-  }
-  static nodes_iterator nodes_end(const ControlDependenceGraph *CDG) {
-    return cdg_const_iterator(*CDG, true);
-  }
-  static size_t size(const ControlDependenceGraph *CDG) {
-    return CDG->getNumNodes();
-  }
-};
-
+typedef CDGBaseIterator<ControlDependenceNode> cdg_iterator;
+typedef CDGBaseIterator<const ControlDependenceNode> cdg_const_iterator;
 }
 
 #endif

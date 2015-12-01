@@ -30,41 +30,13 @@ void DSWPPass::getAnalysisUsage(AnalysisUsage &Info) const {
 }
 
 bool DSWPPass::runOnLoop(Loop *L, LPPassManager &LPM) {
-  LOG_DEBUG("loop depth ", L->getLoopDepth());
-
   // Don't run pass on nested loops.
   if (L->getLoopDepth() > 1) {
-    LOG_INFO("Skipping nested loop.");
     return false;
   }
-  LOG_INFO("Running...");
 
-  raw_os_ostream roos(cout);
+  // TODO(Stan): implement :)
 
-  MemoryDependenceAnalysis &mda = Pass::getAnalysis<MemoryDependenceAnalysis>();
-  for (Loop::block_iterator bi = L->getBlocks().begin();
-       bi != L->getBlocks().end(); bi++) {
-    BasicBlock *BB = *bi;
-    LOG_DEBUG("basic block ", BB);
-    for (BasicBlock::iterator ii = BB->begin(); ii != BB->end(); ii++) {
-      Instruction *inst = &(*ii);
-
-      if (!inst->mayReadOrWriteMemory()) {
-        // Only memory instructions are valid input for the MDA pass.
-        continue;
-      }
-
-      Instruction *dep = mda.getDependency(inst).getInst();
-      if (nullptr != dep) {
-        LOG_DEBUG(dep);
-        LOG_DEBUG("  |");
-        LOG_DEBUG("  v");
-        LOG_DEBUG(inst);
-      }
-    }
-  }
-
-  LOG_INFO("Finished.");
   return true;
 }
 

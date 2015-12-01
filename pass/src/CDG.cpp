@@ -2,22 +2,24 @@
 
 #include <iostream>
 using std::cout;
-
 #include <memory>
 using std::unique_ptr;
-#include <map>
-using std::map;
-#include <vector>
-using std::vector;
-#include <set>
-using std::set;
 #include <utility>
 using std::move;
 
+#include <vector>
+using std::vector;
+#include <map>
+using std::map;
+#include <set>
+using std::set;
+
+#include "llvm/Support/raw_os_ostream.h"
+using llvm::raw_os_ostream;
+
 #include "llvm/PassSupport.h"
 using llvm::RegisterPass;
-#include "llvm/Analysis/PostDominators.h"
-using llvm::PostDominatorTree;
+
 #include "llvm/IR/BasicBlock.h"
 using llvm::BasicBlock;
 #include "llvm/IR/Dominators.h"
@@ -28,8 +30,9 @@ using llvm::Function;
 using llvm::pred_iterator;
 using llvm::pred_begin;
 using llvm::pred_end;
-#include "llvm/Support/raw_os_ostream.h"
-using llvm::raw_os_ostream;
+
+#include "llvm/Analysis/PostDominators.h"
+using llvm::PostDominatorTree;
 
 #include "Util.h"
 
@@ -171,5 +174,4 @@ void ControlDependenceGraph::print(raw_ostream &OS, const Module *) const {
     OS << '\n';
   }
 }
-
 }
