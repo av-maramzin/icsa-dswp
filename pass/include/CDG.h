@@ -34,6 +34,8 @@ using llvm::AnalysisUsage;
 #include "llvm/Analysis/PostDominators.h"
 using llvm::PostDominatorTree;
 
+namespace icsa {
+
 // Designed after DomTreeNodeBase in llvm/Support/GenericDomTree.h.
 class ControlDependenceNode {
   BasicBlock *TheBB;
@@ -259,10 +261,17 @@ public:
   }
 };
 
+}
+using icsa::ControlDependenceNode;
+using icsa::ControlDependenceGraph;
+using icsa::cdg_iterator;
+using icsa::cdg_const_iterator;
+
 // GraphTraits for CDN and CDG.
 
 #include "llvm/ADT/GraphTraits.h"
-using llvm::GraphTraits;
+
+namespace llvm {
 
 template <> struct GraphTraits<ControlDependenceNode *> {
   typedef ControlDependenceNode NodeType;
@@ -327,5 +336,7 @@ struct GraphTraits<const ControlDependenceGraph *>
     return CDG->getNumNodes();
   }
 };
+
+}
 
 #endif

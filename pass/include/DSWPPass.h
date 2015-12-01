@@ -13,6 +13,8 @@ using llvm::AnalysisUsage;
 #include <string>
 using std::string;
 
+namespace icsa {
+
 class DSWPPass : public LoopPass {
 public:
   static char ID;
@@ -21,5 +23,7 @@ public:
   bool runOnLoop(Loop *L, LPPassManager &LPM) override;
   bool doInitialization(Loop *L, LPPassManager &LPM) override;
 };
+
+}
 
 #endif

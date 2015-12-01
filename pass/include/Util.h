@@ -9,6 +9,10 @@ using llvm::BasicBlock;
 using llvm::Instruction;
 #include "llvm/Support/raw_os_ostream.h"
 using llvm::raw_os_ostream;
+#include "llvm/IR/DebugInfoMetadata.h"
+using llvm::DILocation;
+#include "llvm/IR/DebugLoc.h"
+using llvm::DebugLoc;
 
 #include <utility>
 using std::forward;
@@ -17,6 +21,8 @@ using std::string;
 #include <iostream>
 using std::cout;
 using std::endl;
+
+string getBBSourceCode(const BasicBlock &BB);
 
 enum class log_severity : unsigned int { INFO, DEBUG };
 

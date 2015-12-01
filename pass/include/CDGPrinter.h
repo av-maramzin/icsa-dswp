@@ -11,6 +11,10 @@ using llvm::DOTGraphTraits;
 
 #include "CDG.h"
 
+#include "Util.h"
+
+namespace llvm {
+
 template <>
 struct DOTGraphTraits<const ControlDependenceGraph *>
     : public DefaultDOTGraphTraits {
@@ -25,10 +29,25 @@ struct DOTGraphTraits<const ControlDependenceGraph *>
     return "CDG for '" + CDG->getFunction()->getName().str() + "' function";
   }
 
+  static string getSimpleNodeLabel(const ControlDependenceNode *Node,
+                                   const ControlDependenceGraph *Graph) {
+    return func_traits::getSimpleNodeLabel(Node->getBlock(), Graph->getFunction());
+  }
+
+  static string getCompleteNodeLabel(const ControlDependenceNode *Node,
+        const ControlDependenceGraph *Graph) {
+    return getBBSourceCode(*Node->getBlock());
+  }
+
   string getNodeLabel(const ControlDependenceNode *Node,
-                      const ControlDependenceGraph *CDG) {
-    return FT.getNodeLabel(Node->getBlock(), CDG->getFunction());
+                      const ControlDependenceGraph *Graph) {
+    if (isSimple()) {
+      return getSimpleNodeLabel(Node, Graph);
+    } else {
+      return getCompleteNodeLabel(Node, Graph);
+    }
   }
 };
+}
 
 #endif

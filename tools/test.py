@@ -51,7 +51,7 @@ def issource(filename):
   return ext == '.cpp'
 
 def genbytecode(src):
-  cmd = 'clang++ -std=c++11 -c -emit-llvm ' + src
+  cmd = 'clang++ -std=c++11 -g -c -emit-llvm ' + src
   p = Popen(cmd.split(' '), stdout=PIPE, stderr=PIPE)
   output, errors = p.communicate()
   if errors == '':

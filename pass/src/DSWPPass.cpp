@@ -17,6 +17,8 @@ using std::string;
 
 #include "Util.h"
 
+namespace icsa {
+
 char DSWPPass::ID = 0;
 RegisterPass<DSWPPass> X("icsa-dswp",
                          "ICSA implementation of Decoupled Software Pipeline");
@@ -36,6 +38,8 @@ bool DSWPPass::runOnLoop(Loop *L, LPPassManager &LPM) {
     return false;
   }
   LOG_INFO("Running...");
+
+  raw_os_ostream roos(cout);
 
   MemoryDependenceAnalysis &mda = Pass::getAnalysis<MemoryDependenceAnalysis>();
   for (Loop::block_iterator bi = L->getBlocks().begin();
@@ -65,3 +69,5 @@ bool DSWPPass::runOnLoop(Loop *L, LPPassManager &LPM) {
 }
 
 bool DSWPPass::doInitialization(Loop *L, LPPassManager &LPM) { return true; }
+
+}

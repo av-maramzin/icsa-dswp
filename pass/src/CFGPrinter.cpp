@@ -1,4 +1,4 @@
-#include "CDGPrinter.h"
+#include "CFGPrinter.h"
 
 #include <string>
 using std::string;
@@ -24,24 +24,22 @@ using llvm::AnalysisUsage;
 #include "llvm/Support/GraphWriter.h"
 using llvm::WriteGraph;
 
-#include "CDG.h"
-
 namespace icsa {
 
-struct CDGPrinter : public FunctionPass {
+struct CFGPrinter : public FunctionPass {
   static char ID;
-  CDGPrinter() : FunctionPass(ID) {}
+  CFGPrinter() : FunctionPass(ID) {}
 
   bool runOnFunction(Function &F) override {
-    string Filename = ("cdg." + F.getName() + ".dot").str();
+    string Filename = ("cfg." + F.getName() + ".dot").str();
     errs() << "Writing '" << Filename << "'...";
 
     error_code EC;
     raw_fd_ostream File(Filename, EC, F_Text);
 
     if (!EC) {
-      ControlDependenceGraph &cdg = Pass::getAnalysis<ControlDependenceGraph>();
-      WriteGraph(File, (const ControlDependenceGraph *)&cdg);
+      const PrintFunction PF{F};
+      WriteGraph(File, (const PrintFunction *)&PF);
     } else {
       errs() << "  error opening file for writing!";
     }
@@ -58,8 +56,8 @@ struct CDGPrinter : public FunctionPass {
   }
 };
 
-char CDGPrinter::ID = 0;
-RegisterPass<CDGPrinter>
-    CDGPrinterRegister("dot-cdg", "Print CDG of function to 'dot' file");
+char CFGPrinter::ID = 0;
+RegisterPass<CFGPrinter>
+    CFGPrinterRegister("icsa-dot-cfg", "Print CDG of function to 'dot' file");
 
 }

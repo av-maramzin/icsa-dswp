@@ -33,6 +33,8 @@ using llvm::raw_os_ostream;
 
 #include "Util.h"
 
+namespace icsa {
+
 char ControlDependenceGraph::ID = 0;
 RegisterPass<ControlDependenceGraph>
     CDGRegister("cdg", "Build Control Dependence Graph");
@@ -168,4 +170,6 @@ void ControlDependenceGraph::print(raw_ostream &OS, const Module *) const {
     I->second.get()->print(OS);
     OS << '\n';
   }
+}
+
 }
