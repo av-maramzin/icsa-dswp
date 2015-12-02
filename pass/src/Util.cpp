@@ -4,6 +4,11 @@
 using std::cout;
 using std::endl;
 #include <fstream>
+using std::ifstream;
+#include <sstream>
+using std::stringstream;
+#include <ostream>
+using std::ostream;
 
 #include <vector>
 using std::vector;
@@ -12,17 +17,19 @@ using std::vector;
 using std::string;
 using std::getline;
 
-#include <sstream>
-using std::stringstream;
-
-#include <ostream>
-using std::ostream;
-
-#include "llvm/IR/Instructions.h"
-using llvm::BranchInst;
-
+#include "llvm/Support/raw_os_ostream.h"
+using llvm::raw_os_ostream;
 #include "llvm/Support/Casting.h"
 using llvm::isa;
+
+#include "llvm/IR/Instruction.h"
+using llvm::Instruction;
+#include "llvm/IR/Instructions.h"
+using llvm::BranchInst;
+#include "llvm/IR/DebugInfoMetadata.h"
+using llvm::DILocation;
+
+namespace icsa {
 
 struct LineLoc {
   const string filename;
@@ -64,7 +71,7 @@ string getBBSourceCode(const BasicBlock &BB) {
     return "";
   }
 
-  std::ifstream ifs(locs[0].filename, std::ifstream::in);
+  ifstream ifs(locs[0].filename, ifstream::in);
 
   stringstream ss;
   int lineNo = 0;
@@ -84,4 +91,6 @@ string getBBSourceCode(const BasicBlock &BB) {
 void log_print_impl() {
   cout << endl;
   return;
+}
+
 }
