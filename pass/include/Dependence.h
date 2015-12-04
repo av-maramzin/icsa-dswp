@@ -16,6 +16,8 @@ using llvm::SmallVectorImpl;
 #include "llvm/ADT/SmallPtrSet.h"
 using llvm::SmallPtrSet;
 
+namespace icsa {
+
 // Designed after DomTreeNodeBase in llvm/Support/GenericDomTree.h.
 template <typename ValueType> class DependenceNode {
   ValueType *TheValue;
@@ -174,5 +176,7 @@ public:
     return tmp;
   }
 };
+
+}
 
 #endif
