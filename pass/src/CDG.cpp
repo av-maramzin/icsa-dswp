@@ -2,24 +2,22 @@
 
 #include <iostream>
 using std::cout;
+
 #include <memory>
 using std::unique_ptr;
+#include <map>
+using std::map;
+#include <vector>
+using std::vector;
+#include <set>
+using std::set;
 #include <utility>
 using std::move;
 
-#include <vector>
-using std::vector;
-#include <map>
-using std::map;
-#include <set>
-using std::set;
-
-#include "llvm/Support/raw_os_ostream.h"
-using llvm::raw_os_ostream;
-
 #include "llvm/PassSupport.h"
 using llvm::RegisterPass;
-
+#include "llvm/Analysis/PostDominators.h"
+using llvm::PostDominatorTree;
 #include "llvm/IR/BasicBlock.h"
 using llvm::BasicBlock;
 #include "llvm/IR/Dominators.h"
@@ -30,9 +28,8 @@ using llvm::Function;
 using llvm::pred_iterator;
 using llvm::pred_begin;
 using llvm::pred_end;
-
-#include "llvm/Analysis/PostDominators.h"
-using llvm::PostDominatorTree;
+#include "llvm/Support/raw_os_ostream.h"
+using llvm::raw_os_ostream;
 
 #include "Util.h"
 
@@ -43,7 +40,7 @@ RegisterPass<ControlDependenceGraph>
     CDGRegister("cdg", "Build Control Dependence Graph");
 
 bool ControlDependenceGraph::runOnFunction(Function &F) {
-  firstValue = &F.getEntryBlock();
+  firstBB = &F.getEntryBlock();
 
   PostDominatorTree &pdt = Pass::getAnalysis<PostDominatorTree>();
 
@@ -72,7 +69,7 @@ bool ControlDependenceGraph::runOnFunction(Function &F) {
     top_down_traversal.pop_back();
 
     BasicBlock *currentBB = current->getBlock();
-    Nodes[currentBB] =
+    CDGNodes[currentBB] =
         shared_ptr<ControlDependenceNode>(new ControlDependenceNode(currentBB));
 
     // TODO(Stan): skip dominance_frontier and directly build CDG
@@ -100,10 +97,10 @@ bool ControlDependenceGraph::runOnFunction(Function &F) {
   // Reverse the dominance_frontier map and store as a graph.
   for (auto &kv : dominance_frontier) {
     BasicBlock *to = kv.first;
-    NodeMapType::iterator to_it = Nodes.find(to);
+    CDGNodeMapType::iterator to_it = CDGNodes.find(to);
 
     for (BasicBlock *from : *kv.second) {
-      NodeMapType::iterator from_it = Nodes.find(from);
+      CDGNodeMapType::iterator from_it = CDGNodes.find(from);
 
       auto from_node = from_it->second.get();
       auto to_node = to_it->second;
@@ -114,9 +111,53 @@ bool ControlDependenceGraph::runOnFunction(Function &F) {
   return true;
 }
 
+ControlDependenceNode *ControlDependenceGraph::
+operator[](BasicBlock *BB) const {
+  return getNode(BB);
+}
+
+ControlDependenceNode *ControlDependenceGraph::getNode(BasicBlock *BB) const {
+  CDGNodeMapType::const_iterator I = CDGNodes.find(BB);
+  if (I != CDGNodes.end())
+    return I->second.get();
+  return nullptr;
+}
+
+bool ControlDependenceGraph::dependsOn(ControlDependenceNode *A,
+                                       ControlDependenceNode *B) const {
+  for (ControlDependenceNode::const_iterator it = B->begin(); it != B->end();
+       ++it) {
+    if (false == (*it)->compare(A))
+      return true;
+  }
+
+  for (ControlDependenceNode::const_iterator it = B->begin(); it != B->end();
+       ++it) {
+    if (dependsOn(A, (*it)))
+      return true;
+  }
+
+  return false;
+}
+
+bool ControlDependenceGraph::dependsOn(BasicBlock *A, BasicBlock *B) const {
+  ControlDependenceNode *AN = getNode(A), *BN = getNode(B);
+  return dependsOn(AN, BN);
+}
+
+void ControlDependenceGraph::getDependants(
+    BasicBlock *R, SmallVectorImpl<BasicBlock *> &Result) const {
+  Result.clear();
+  const ControlDependenceNode *RN = getNode(R);
+  for (ControlDependenceNode::const_iterator it = RN->begin(); it != RN->end();
+       ++it) {
+    Result.push_back((*it)->getBlock());
+  }
+}
+
 void ControlDependenceGraph::releaseMemory() {
-  firstValue = nullptr;
-  Nodes.clear();
+  firstBB = nullptr;
+  CDGNodes.clear();
 }
 
 void ControlDependenceGraph::print(raw_ostream &OS, const Module *) const {
@@ -124,10 +165,11 @@ void ControlDependenceGraph::print(raw_ostream &OS, const Module *) const {
   OS << "Control Dependence Graph: ";
   OS << "<node: dependants>";
   OS << "\n";
-  for (NodeMapType::const_iterator I = Nodes.begin(); I != Nodes.end();
+  for (CDGNodeMapType::const_iterator I = CDGNodes.begin(); I != CDGNodes.end();
        ++I) {
     I->second.get()->print(OS);
     OS << '\n';
   }
 }
+
 }
