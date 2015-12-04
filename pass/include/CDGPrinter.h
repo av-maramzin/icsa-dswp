@@ -31,12 +31,12 @@ struct DOTGraphTraits<const ControlDependenceGraph *>
 
   static string getSimpleNodeLabel(const ControlDependenceNode *Node,
                                    const ControlDependenceGraph *Graph) {
-    return func_traits::getSimpleNodeLabel(Node->getBlock(), Graph->getFunction());
+    return func_traits::getSimpleNodeLabel(Node->getValue(), Graph->getFunction());
   }
 
   static string getCompleteNodeLabel(const ControlDependenceNode *Node,
         const ControlDependenceGraph *Graph) {
-    return getBBSourceCode(*Node->getBlock());
+    return getBBSourceCode(*Node->getValue());
   }
 
   string getNodeLabel(const ControlDependenceNode *Node,

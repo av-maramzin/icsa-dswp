@@ -151,7 +151,7 @@ void ControlDependenceGraph::getDependants(
   const ControlDependenceNode *RN = getNode(R);
   for (ControlDependenceNode::const_iterator it = RN->begin(); it != RN->end();
        ++it) {
-    Result.push_back((*it)->getBlock());
+    Result.push_back((*it)->getValue());
   }
 }
 

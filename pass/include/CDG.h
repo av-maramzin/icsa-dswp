@@ -37,28 +37,27 @@ using llvm::PostDominatorTree;
 namespace icsa {
 
 // Designed after DomTreeNodeBase in llvm/Support/GenericDomTree.h.
-class ControlDependenceNode {
-  BasicBlock *TheBB;
-  vector<ControlDependenceNode *> Children;
+template <typename ValueType>
+class DependenceNode {
+  ValueType *TheValue;
+  vector<DependenceNode<ValueType> *> Children;
 
 public:
-  typedef typename vector<ControlDependenceNode *>::iterator iterator;
-  typedef
-      typename vector<ControlDependenceNode *>::const_iterator const_iterator;
-
+  typedef vector<DependenceNode<ValueType> *> vector_type;
+  typedef typename vector_type::iterator iterator;
+  typedef typename vector_type::const_iterator const_iterator;
+  
   iterator begin() { return Children.begin(); }
   iterator end() { return Children.end(); }
   const_iterator begin() const { return Children.begin(); }
   const_iterator end() const { return Children.end(); }
 
-  BasicBlock *getBlock() const { return TheBB; }
-  const vector<ControlDependenceNode *> &getChildren() const {
-    return Children;
-  }
+  ValueType *getValue() const { return TheValue; }
+  const vector_type &getChildren() const { return Children; }
 
-  ControlDependenceNode(BasicBlock *BB) : TheBB(BB) {}
+  DependenceNode<ValueType>(ValueType *Value) : TheValue(Value) {}
 
-  void addChild(shared_ptr<ControlDependenceNode> C) {
+  void addChild(shared_ptr<DependenceNode<ValueType>> C) {
     Children.push_back(C.get());
   }
 
@@ -67,20 +66,20 @@ public:
   void clearAllChildren() { Children.clear(); }
 
   /// Return true if the nodes are not the same and false if they are the same.
-  bool compare(const ControlDependenceNode *Other) const {
+  bool compare(const DependenceNode<ValueType> *Other) const {
     if (getNumChildren() != Other->getNumChildren()) {
       return true;
     }
 
-    SmallPtrSet<const BasicBlock *, 4> OtherChildren;
+    SmallPtrSet<const ValueType *, 4> OtherChildren;
     for (const_iterator I = Other->begin(), E = Other->end(); I != E; ++I) {
-      const BasicBlock *BB = (*I)->getBlock();
-      OtherChildren.insert(BB);
+      const ValueType *Value = (*I)->getValue();
+      OtherChildren.insert(Value);
     }
 
     for (const_iterator I = begin(), E = end(); I != E; ++I) {
-      const BasicBlock *BB = (*I)->getBlock();
-      if (OtherChildren.count(BB) == 0) {
+      const ValueType *Value = (*I)->getValue();
+      if (OtherChildren.count(Value) == 0) {
         return true;
       }
     }
@@ -88,17 +87,19 @@ public:
   }
 
   void print(raw_ostream &OS) const {
-    getBlock()->printAsOperand(OS, false);
+    getValue()->printAsOperand(OS, false);
     OS << ":";
     for (const_iterator it = begin(); it != end(); ++it) {
       if (it != begin()) {
         OS << ",";
       }
       OS << " ";
-      (*it)->getBlock()->printAsOperand(OS, false);
+      (*it)->getValue()->printAsOperand(OS, false);
     }
   }
 };
+
+typedef DependenceNode<BasicBlock> ControlDependenceNode;
 
 // Designed after the PostDominatorTree struct in
 // llvm/Analysis/PostDominators.h.
