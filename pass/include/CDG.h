@@ -36,6 +36,8 @@ using llvm::PostDominatorTree;
 
 namespace icsa {
 
+template <typename ValueType, typename NodeType> class DependenceBaseIterator;
+
 // Designed after DomTreeNodeBase in llvm/Support/GenericDomTree.h.
 template <typename ValueType> class DependenceNode {
   ValueType *TheValue;
@@ -124,14 +126,21 @@ public:
 
   /// Get all nodes that have a control dependence on R.
   void getDependants(ValueType *R, SmallVectorImpl<ValueType *> &Result) const;
+
+  void releaseMemory() {
+    firstValue = nullptr;
+    Nodes.clear();
+  }
+
+  friend class DependenceBaseIterator<ValueType, DependenceNode<ValueType>>;
+  friend class DependenceBaseIterator<ValueType,
+                                      const DependenceNode<ValueType>>;
 };
 
 class ControlDependenceGraph : public DependenceGraph<BasicBlock> {
 public:
   const Function *getFunction() const { return firstValue->getParent(); }
 
-  friend class cdg_iterator;
-  friend class cdg_const_iterator;
   friend class ControlDependenceGraphPass;
 };
 
@@ -157,123 +166,73 @@ public:
   const char *getPassName() const override {
     return "Control Dependence Graph";
   }
+
+  void releaseMemory() override { CDG.releaseMemory(); }
 };
 
 // Iterator for all CDG nodes.
 
-class cdg_iterator
-    : public std::iterator<std::bidirectional_iterator_tag,
-                           ControlDependenceNode, int, ControlDependenceNode *,
-                           ControlDependenceNode *> {
-  typedef std::iterator<std::bidirectional_iterator_tag, ControlDependenceNode,
-                        int, ControlDependenceNode *,
-                        ControlDependenceNode *> super;
+template <typename ValueType, typename NodeType>
+class DependenceBaseIterator
+    : public std::iterator<std::bidirectional_iterator_tag, NodeType, int,
+                           NodeType *, NodeType *> {
+  typedef std::iterator<std::bidirectional_iterator_tag, NodeType, int,
+                        NodeType *, NodeType *> super;
 
 public:
   typedef typename super::pointer pointer;
   typedef typename super::reference reference;
   typedef typename ControlDependenceGraph::NodeMapType::const_iterator
-      CDGNodeMapIterator;
+      NodeMapIterator;
 
 private:
   const ControlDependenceGraph &Graph;
-  CDGNodeMapIterator idx;
+  NodeMapIterator idx;
 
 public:
   // Begin iterator.
-  explicit inline cdg_iterator(const ControlDependenceGraph &G)
+  explicit inline DependenceBaseIterator(const ControlDependenceGraph &G)
       : Graph(G), idx(G.Nodes.begin()) {}
 
   // End iterator.
-  inline cdg_iterator(const ControlDependenceGraph &G, bool)
+  inline DependenceBaseIterator(const ControlDependenceGraph &G, bool)
       : Graph(G), idx(G.Nodes.end()) {}
 
-  inline bool operator==(const cdg_iterator &x) const { return idx == x.idx; }
-  inline bool operator!=(const cdg_iterator &x) const { return !operator==(x); }
-
-  inline reference operator*() const { return idx->second.get(); }
-  inline pointer operator->() const { return operator*(); }
-
-  inline cdg_iterator &operator++() {
-    ++idx;
-    return *this;
-  }
-
-  inline cdg_iterator operator++(int) {
-    cdg_iterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  inline cdg_iterator &operator--() {
-    --idx;
-    return *this;
-  }
-  inline cdg_iterator operator--(int) {
-    cdg_iterator tmp = *this;
-    --*this;
-    return tmp;
-  }
-};
-
-class cdg_const_iterator
-    : public std::iterator<
-          std::bidirectional_iterator_tag, const ControlDependenceNode, int,
-          const ControlDependenceNode *, const ControlDependenceNode *> {
-  typedef std::iterator<
-      std::bidirectional_iterator_tag, const ControlDependenceNode, int,
-      const ControlDependenceNode *, const ControlDependenceNode *> super;
-
-public:
-  typedef typename super::pointer pointer;
-  typedef typename super::reference reference;
-  typedef typename ControlDependenceGraph::NodeMapType::const_iterator
-      CDGNodeMapIterator;
-
-private:
-  const ControlDependenceGraph &Graph;
-  CDGNodeMapIterator idx;
-
-public:
-  // Begin iterator.
-  explicit inline cdg_const_iterator(const ControlDependenceGraph &G)
-      : Graph(G), idx(G.Nodes.begin()) {}
-
-  // End iterator.
-  inline cdg_const_iterator(const ControlDependenceGraph &G, bool)
-      : Graph(G), idx(G.Nodes.end()) {}
-
-  inline bool operator==(const cdg_const_iterator &x) const {
+  inline bool operator==(const DependenceBaseIterator &x) const {
     return idx == x.idx;
   }
-  inline bool operator!=(const cdg_const_iterator &x) const {
+  inline bool operator!=(const DependenceBaseIterator &x) const {
     return !operator==(x);
   }
 
   inline reference operator*() const { return idx->second.get(); }
   inline pointer operator->() const { return operator*(); }
 
-  inline cdg_const_iterator &operator++() {
+  inline DependenceBaseIterator &operator++() {
     ++idx;
     return *this;
   }
 
-  inline cdg_const_iterator operator++(int) {
-    cdg_const_iterator tmp = *this;
+  inline DependenceBaseIterator operator++(int) {
+    DependenceBaseIterator tmp = *this;
     ++*this;
     return tmp;
   }
 
-  inline cdg_const_iterator &operator--() {
+  inline DependenceBaseIterator &operator--() {
     --idx;
     return *this;
   }
-  inline cdg_const_iterator operator--(int) {
-    cdg_const_iterator tmp = *this;
+  inline DependenceBaseIterator operator--(int) {
+    DependenceBaseIterator tmp = *this;
     --*this;
     return tmp;
   }
 };
+
+typedef DependenceBaseIterator<BasicBlock, ControlDependenceNode> cdg_iterator;
+typedef DependenceBaseIterator<BasicBlock, const ControlDependenceNode>
+    cdg_const_iterator;
 }
 using icsa::ControlDependenceNode;
 using icsa::ControlDependenceGraph;
