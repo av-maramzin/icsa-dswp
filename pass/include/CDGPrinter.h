@@ -10,14 +10,13 @@ using llvm::DOTGraphTraits;
 // Specializes DOTGraphTraits for <Function *>
 
 #include "CDG.h"
-using icsa::ControlDependenceGraph;
 
 #include "Util.h"
 
 namespace llvm {
 
 template <>
-struct DOTGraphTraits<const ControlDependenceGraph *>
+struct DOTGraphTraits<const icsa::ControlDependenceGraph *>
     : public DefaultDOTGraphTraits {
 
   typedef DOTGraphTraits<const Function *> func_traits;
@@ -26,22 +25,22 @@ struct DOTGraphTraits<const ControlDependenceGraph *>
   DOTGraphTraits(bool isSimple = false)
       : FT(isSimple), DefaultDOTGraphTraits(isSimple){};
 
-  static string getGraphName(const ControlDependenceGraph *CDG) {
+  static string getGraphName(const icsa::ControlDependenceGraph *CDG) {
     return "CDG for '" + CDG->getFunction()->getName().str() + "' function";
   }
 
-  static string getSimpleNodeLabel(const ControlDependenceNode *Node,
-                                   const ControlDependenceGraph *Graph) {
+  static string getSimpleNodeLabel(const icsa::ControlDependenceNode *Node,
+                                   const icsa::ControlDependenceGraph *Graph) {
     return func_traits::getSimpleNodeLabel(Node->getValue(), Graph->getFunction());
   }
 
-  static string getCompleteNodeLabel(const ControlDependenceNode *Node,
-        const ControlDependenceGraph *Graph) {
+  static string getCompleteNodeLabel(const icsa::ControlDependenceNode *Node,
+        const icsa::ControlDependenceGraph *Graph) {
     return getBBSourceCode(*Node->getValue());
   }
 
-  string getNodeLabel(const ControlDependenceNode *Node,
-                      const ControlDependenceGraph *Graph) {
+  string getNodeLabel(const icsa::ControlDependenceNode *Node,
+                      const icsa::ControlDependenceGraph *Graph) {
     if (isSimple()) {
       return getSimpleNodeLabel(Node, Graph);
     } else {
