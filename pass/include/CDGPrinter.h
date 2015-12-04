@@ -10,6 +10,7 @@ using llvm::DOTGraphTraits;
 // Specializes DOTGraphTraits for <Function *>
 
 #include "CDG.h"
+using icsa::ControlDependenceGraph;
 
 #include "Util.h"
 

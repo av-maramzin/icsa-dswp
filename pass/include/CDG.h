@@ -37,8 +37,7 @@ using llvm::PostDominatorTree;
 namespace icsa {
 
 // Designed after DomTreeNodeBase in llvm/Support/GenericDomTree.h.
-template <typename ValueType>
-class DependenceNode {
+template <typename ValueType> class DependenceNode {
   ValueType *TheValue;
   vector<DependenceNode<ValueType> *> Children;
 
@@ -46,7 +45,7 @@ public:
   typedef vector<DependenceNode<ValueType> *> vector_type;
   typedef typename vector_type::iterator iterator;
   typedef typename vector_type::const_iterator const_iterator;
-  
+
   iterator begin() { return Children.begin(); }
   iterator end() { return Children.end(); }
   const_iterator begin() const { return Children.begin(); }
@@ -103,47 +102,61 @@ typedef DependenceNode<BasicBlock> ControlDependenceNode;
 
 // Designed after the PostDominatorTree struct in
 // llvm/Analysis/PostDominators.h.
-class ControlDependenceGraph : public FunctionPass {
+template <typename ValueType> class DependenceGraph {
+protected:
+  typedef DependenceNode<ValueType> NodeType;
+  typedef map<ValueType *, shared_ptr<NodeType>> NodeMapType;
+  NodeMapType Nodes;
+  ValueType *firstValue;
+
+public:
+  NodeType *getRootNode() const { return getNode(firstValue); }
+
+  unsigned getNumNodes() const { return Nodes.size(); }
+
+  NodeType *operator[](ValueType *Value) const;
+
+  NodeType *getNode(ValueType *Value) const;
+
+  bool dependsOn(NodeType *A, NodeType *B) const;
+
+  bool dependsOn(ValueType *A, ValueType *B) const;
+
+  /// Get all nodes that have a control dependence on R.
+  void getDependants(ValueType *R, SmallVectorImpl<ValueType *> &Result) const;
+};
+
+class ControlDependenceGraph : public DependenceGraph<BasicBlock> {
+public:
+  const Function *getFunction() const { return firstValue->getParent(); }
+
+  friend class cdg_iterator;
+  friend class cdg_const_iterator;
+  friend class ControlDependenceGraphPass;
+};
+
+// Designed after the PostDominatorTree struct in
+// llvm/Analysis/PostDominators.h.
+class ControlDependenceGraphPass : public FunctionPass {
 private:
-  typedef map<BasicBlock *, shared_ptr<ControlDependenceNode>> CDGNodeMapType;
-  CDGNodeMapType CDGNodes;
-  BasicBlock *firstBB;
+  ControlDependenceGraph CDG;
 
 public:
   static char ID;
 
-  ControlDependenceGraph() : FunctionPass(ID) {}
+  ControlDependenceGraphPass() : FunctionPass(ID) {}
 
   bool runOnFunction(Function &F) override;
+
+  const ControlDependenceGraph &getCDG() const { return CDG; }
 
   void getAnalysisUsage(AnalysisUsage &Info) const override {
     Info.addRequired<PostDominatorTree>();
   }
 
-  const Function *getFunction() const { return firstBB->getParent(); }
-
-  ControlDependenceNode *getRootNode() const { return getNode(firstBB); }
-
-  unsigned getNumNodes() const { return CDGNodes.size(); }
-
-  ControlDependenceNode *operator[](BasicBlock *BB) const;
-
-  ControlDependenceNode *getNode(BasicBlock *BB) const;
-
-  bool dependsOn(ControlDependenceNode *A, ControlDependenceNode *B) const;
-
-  bool dependsOn(BasicBlock *A, BasicBlock *B) const;
-
-  /// Get all nodes that have a control dependence on R.
-  void getDependants(BasicBlock *R,
-                     SmallVectorImpl<BasicBlock *> &Result) const;
-
-  void releaseMemory() override;
-
-  void print(raw_ostream &OS, const Module *) const override;
-
-  friend class cdg_iterator;
-  friend class cdg_const_iterator;
+  const char *getPassName() const override {
+    return "Control Dependence Graph";
+  }
 };
 
 // Iterator for all CDG nodes.
@@ -159,7 +172,7 @@ class cdg_iterator
 public:
   typedef typename super::pointer pointer;
   typedef typename super::reference reference;
-  typedef typename ControlDependenceGraph::CDGNodeMapType::const_iterator
+  typedef typename ControlDependenceGraph::NodeMapType::const_iterator
       CDGNodeMapIterator;
 
 private:
@@ -169,11 +182,11 @@ private:
 public:
   // Begin iterator.
   explicit inline cdg_iterator(const ControlDependenceGraph &G)
-      : Graph(G), idx(G.CDGNodes.begin()) {}
+      : Graph(G), idx(G.Nodes.begin()) {}
 
   // End iterator.
   inline cdg_iterator(const ControlDependenceGraph &G, bool)
-      : Graph(G), idx(G.CDGNodes.end()) {}
+      : Graph(G), idx(G.Nodes.end()) {}
 
   inline bool operator==(const cdg_iterator &x) const { return idx == x.idx; }
   inline bool operator!=(const cdg_iterator &x) const { return !operator==(x); }
@@ -214,7 +227,7 @@ class cdg_const_iterator
 public:
   typedef typename super::pointer pointer;
   typedef typename super::reference reference;
-  typedef typename ControlDependenceGraph::CDGNodeMapType::const_iterator
+  typedef typename ControlDependenceGraph::NodeMapType::const_iterator
       CDGNodeMapIterator;
 
 private:
@@ -224,11 +237,11 @@ private:
 public:
   // Begin iterator.
   explicit inline cdg_const_iterator(const ControlDependenceGraph &G)
-      : Graph(G), idx(G.CDGNodes.begin()) {}
+      : Graph(G), idx(G.Nodes.begin()) {}
 
   // End iterator.
   inline cdg_const_iterator(const ControlDependenceGraph &G, bool)
-      : Graph(G), idx(G.CDGNodes.end()) {}
+      : Graph(G), idx(G.Nodes.end()) {}
 
   inline bool operator==(const cdg_const_iterator &x) const {
     return idx == x.idx;
@@ -261,7 +274,6 @@ public:
     return tmp;
   }
 };
-
 }
 using icsa::ControlDependenceNode;
 using icsa::ControlDependenceGraph;
@@ -337,7 +349,6 @@ struct GraphTraits<const ControlDependenceGraph *>
     return CDG->getNumNodes();
   }
 };
-
 }
 
 #endif

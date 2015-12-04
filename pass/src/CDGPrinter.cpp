@@ -40,8 +40,8 @@ struct CDGPrinter : public FunctionPass {
     raw_fd_ostream File(Filename, EC, F_Text);
 
     if (!EC) {
-      ControlDependenceGraph &cdg = Pass::getAnalysis<ControlDependenceGraph>();
-      WriteGraph(File, (const ControlDependenceGraph *)&cdg);
+      ControlDependenceGraphPass &cdg = Pass::getAnalysis<ControlDependenceGraphPass>();
+      WriteGraph(File, (const ControlDependenceGraph *)&cdg.getCDG());
     } else {
       errs() << "  error opening file for writing!";
     }
@@ -54,7 +54,7 @@ struct CDGPrinter : public FunctionPass {
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.setPreservesAll();
-    AU.addRequired<ControlDependenceGraph>();
+    AU.addRequired<ControlDependenceGraphPass>();
   }
 };
 

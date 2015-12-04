@@ -52,7 +52,6 @@ struct CFGPrinter : public FunctionPass {
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.setPreservesAll();
-    AU.addRequired<ControlDependenceGraph>();
   }
 };
 
