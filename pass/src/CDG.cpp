@@ -67,8 +67,7 @@ bool ControlDependenceGraphPass::runOnFunction(Function &F) {
     top_down_traversal.pop_back();
 
     BasicBlock *currentBB = current->getBlock();
-    CDG.Nodes[currentBB] =
-        shared_ptr<ControlDependenceNode>(new ControlDependenceNode(currentBB));
+    CDG.addNode(currentBB);
 
     // TODO(Stan): skip dominance_frontier and directly build CDG
     dominance_frontier[currentBB] =
@@ -95,14 +94,12 @@ bool ControlDependenceGraphPass::runOnFunction(Function &F) {
   // Reverse the dominance_frontier map and store as a graph.
   for (auto &kv : dominance_frontier) {
     BasicBlock *to = kv.first;
-    ControlDependenceGraph::NodeMapType::iterator to_it = CDG.Nodes.find(to);
+    auto to_it = CDG.find(to);
 
     for (BasicBlock *from : *kv.second) {
-      ControlDependenceGraph::NodeMapType::iterator from_it = CDG.Nodes.find(from);
+      auto from_it = CDG.find(from);
 
-      auto from_node = from_it->second.get();
-      auto to_node = to_it->second;
-      from_node->addChild(to_node);
+      CDG.addEdge(from_it, to_it);
     }
   }
 

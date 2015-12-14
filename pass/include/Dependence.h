@@ -99,7 +99,21 @@ public:
 
   NodeType *operator[](ValueType *Value) const;
 
+  void addNode(ValueType *Value) {
+    Nodes[Value] = shared_ptr<NodeType>(new NodeType(Value));
+  }
+
   NodeType *getNode(ValueType *Value) const;
+
+  typename NodeMapType::iterator find(ValueType *Value) {
+    return Nodes.find(Value);
+  }
+
+  void addEdge(typename NodeMapType::iterator from_it, typename NodeMapType::iterator to_it) {
+    auto from_node = from_it->second.get();
+    auto to_node = to_it->second;
+    from_node->addChild(to_node);
+  }
 
   bool dependsOn(NodeType *A, NodeType *B) const;
 

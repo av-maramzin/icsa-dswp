@@ -27,6 +27,10 @@ typedef DependenceNode<Instruction> MemoryDependenceNode;
 
 class MemoryDependenceGraph : public DependenceGraph<Instruction> {
 public:
+  const Function *getFunction() const {
+    return firstValue->getParent()->getParent();
+  }
+
   friend class MemoryDependenceGraphPass;
 };
 
