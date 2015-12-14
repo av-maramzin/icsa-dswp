@@ -1,7 +1,11 @@
-// Implemented in DSWPPass.cpp.
 #ifndef ICSA_DSWP_CDG_H
 #define ICSA_DSWP_CDG_H
 
+#include "llvm/Support/raw_ostream.h"
+using llvm::raw_ostream;
+
+#include "llvm/IR/Module.h"
+using llvm::Module;
 #include "llvm/IR/Function.h"
 using llvm::Function;
 #include "llvm/IR/BasicBlock.h"
@@ -49,6 +53,10 @@ public:
 
   const char *getPassName() const override {
     return "Control Dependence Graph";
+  }
+
+  void print(raw_ostream &OS, const Module *) const override {
+    CDG.print(OS);
   }
 
   void releaseMemory() override { CDG.releaseMemory(); }

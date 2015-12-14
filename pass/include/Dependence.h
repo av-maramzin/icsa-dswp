@@ -113,6 +113,18 @@ public:
     Nodes.clear();
   }
 
+  void print(raw_ostream &OS) const {
+    OS << "=============================--------------------------------\n";
+    OS << "Control Dependence Graph: ";
+    OS << "<node: dependants>";
+    OS << "\n";
+    for (typename NodeMapType::const_iterator I = Nodes.begin();
+         I != Nodes.end(); ++I) {
+      I->second.get()->print(OS);
+      OS << '\n';
+    }
+  }
+
   friend class DependenceBaseIterator<ValueType, DependenceNode<ValueType>>;
   friend class DependenceBaseIterator<ValueType,
                                       const DependenceNode<ValueType>>;
@@ -176,7 +188,6 @@ public:
     return tmp;
   }
 };
-
 }
 
 #endif
