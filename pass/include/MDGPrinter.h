@@ -36,7 +36,7 @@ struct DOTGraphTraits<const icsa::MemoryDependenceGraph *>
     stringstream ss;
     raw_os_ostream roos(ss);
 
-    Node->getValue()->printAsOperand(roos);
+    Node->getValue()->print(roos);
 
     return ss.str();
   }

@@ -18,6 +18,7 @@ using std::move;
 using llvm::RegisterPass;
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 using llvm::MemoryDependenceAnalysis;
+using llvm::MemDepResult;
 #include "llvm/IR/Function.h"
 using llvm::Function;
 
@@ -33,6 +34,32 @@ bool MemoryDependenceGraphPass::runOnFunction(Function &F) {
   MDG.firstValue = F.getEntryBlock().begin();
 
   MemoryDependenceAnalysis &mda = Pass::getAnalysis<MemoryDependenceAnalysis>();
+
+  // Add nodes.
+  for (auto it = F.begin(); it != F.end(); ++it) {
+    const BasicBlock& BB = *it;
+    for (auto jt = BB.begin(); jt != BB.end(); ++jt) {
+      const Instruction& I = *jt;
+      MDG.addNode(const_cast<Instruction*>(&I));
+    }
+  }
+
+  // Add edges.
+  for (auto it = F.begin(); it != F.end(); ++it) {
+    const BasicBlock& BB = *it;
+    for (auto jt = BB.begin(); jt != BB.end(); ++jt) {
+      Instruction* I = const_cast<Instruction*>(&*jt);
+      if (!I->mayReadOrWriteMemory()) {
+        continue;
+      }
+
+      MemDepResult mdr = mda.getDependency(I);
+      Instruction *DepInst = mdr.getInst();
+      if (DepInst != nullptr) {
+        MDG.addEdge(MDG.find(DepInst), MDG.find(I));
+      }
+    }
+  }
 
   return true;
 }
