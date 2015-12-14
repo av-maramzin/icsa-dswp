@@ -28,8 +28,6 @@ using llvm::Function;
 using llvm::pred_iterator;
 using llvm::pred_begin;
 using llvm::pred_end;
-#include "llvm/Support/raw_os_ostream.h"
-using llvm::raw_os_ostream;
 
 #include "Util.h"
 
