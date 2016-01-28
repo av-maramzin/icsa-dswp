@@ -1,5 +1,5 @@
-#ifndef ICSA_DSWP_MDG_H
-#define ICSA_DSWP_MDG_H
+#ifndef ICSA_DSWP_DDG_H
+#define ICSA_DSWP_DDG_H
 
 #include "llvm/Support/raw_ostream.h"
 using llvm::raw_ostream;
@@ -16,54 +16,50 @@ using llvm::FunctionPass;
 #include "llvm/PassAnalysisSupport.h"
 using llvm::AnalysisUsage;
 
-#include "llvm/Analysis/MemoryDependenceAnalysis.h"
-using llvm::MemoryDependenceAnalysis;
-
 #include "Dependence.h"
 
 namespace icsa {
 
-typedef DependenceNode<Instruction> MemoryDependenceNode;
+typedef DependenceNode<Instruction> DataDependenceNode;
 
-class MemoryDependenceGraph : public DependenceGraph<Instruction> {
+class DataDependenceGraph : public DependenceGraph<Instruction> {
 public:
   const Function *getFunction() const {
     return firstValue->getParent()->getParent();
   }
 
-  friend class MemoryDependenceGraphPass;
+  friend class DataDependenceGraphPass;
 };
 
 // Designed after ControlDependenceGraphPass.
-class MemoryDependenceGraphPass : public FunctionPass {
+class DataDependenceGraphPass : public FunctionPass {
 private:
-  MemoryDependenceGraph MDG;
+  DataDependenceGraph DDG;
 
 public:
   static char ID;
 
-  MemoryDependenceGraphPass() : FunctionPass(ID) {}
+  DataDependenceGraphPass() : FunctionPass(ID) {}
 
   bool runOnFunction(Function &F) override;
 
-  const MemoryDependenceGraph &getMDG() const { return MDG; }
+  const DataDependenceGraph &getDDG() const { return DDG; }
 
   void getAnalysisUsage(AnalysisUsage &Info) const override {
-    Info.addRequired<MemoryDependenceAnalysis>();
   }
 
   const char *getPassName() const override {
-    return "Memory Dependence Graph";
+    return "Data Dependence Graph";
   }
 
-  void print(raw_ostream &OS, const Module *) const override { MDG.print(OS); }
+  void print(raw_ostream &OS, const Module *) const override { DDG.print(OS); }
 
-  void releaseMemory() override { MDG.releaseMemory(); }
+  void releaseMemory() override { DDG.releaseMemory(); }
 };
 
-typedef DependenceBaseIterator<Instruction, MemoryDependenceNode> mdg_iterator;
-typedef DependenceBaseIterator<Instruction, const MemoryDependenceNode>
-    mdg_const_iterator;
+typedef DependenceBaseIterator<Instruction, DataDependenceNode> ddg_iterator;
+typedef DependenceBaseIterator<Instruction, const DataDependenceNode>
+    ddg_const_iterator;
 }
 
 // GraphTraits for CDN and CDG.
@@ -75,19 +71,19 @@ typedef DependenceBaseIterator<Instruction, const MemoryDependenceNode>
 namespace llvm {
 
 template <>
-struct GraphTraits<icsa::MemoryDependenceNode *>
+struct GraphTraits<icsa::DataDependenceNode *>
     : public icsa::DNGraphTraits<Instruction> {};
 
 template <>
-struct GraphTraits<const icsa::MemoryDependenceNode *>
+struct GraphTraits<const icsa::DataDependenceNode *>
     : public icsa::ConstDNGraphTraits<Instruction> {};
 
 template <>
-struct GraphTraits<icsa::MemoryDependenceGraph *>
+struct GraphTraits<icsa::DataDependenceGraph *>
     : public icsa::DGGraphTraits<Instruction> {};
 
 template <>
-struct GraphTraits<const icsa::MemoryDependenceGraph *>
+struct GraphTraits<const icsa::DataDependenceGraph *>
     : public icsa::ConstDGGraphTraits<Instruction> {};
 }
 
