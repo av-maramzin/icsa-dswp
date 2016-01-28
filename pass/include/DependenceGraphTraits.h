@@ -1,3 +1,6 @@
+#ifndef ICSA_DSWP_DEPENDENCE_GRAPH_TRAITS_H
+#define ICSA_DSWP_DEPENDENCE_GRAPH_TRAITS_H
+
 #include "Dependence.h"
 
 namespace icsa {
@@ -73,3 +76,5 @@ struct ConstDGGraphTraits
       ChildIteratorType;
 };
 }
+
+#endif

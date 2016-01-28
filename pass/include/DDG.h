@@ -17,10 +17,11 @@ using llvm::FunctionPass;
 using llvm::AnalysisUsage;
 
 #include "Dependence.h"
+#include "InstDep.h"
 
 namespace icsa {
 
-typedef DependenceNode<Instruction> DataDependenceNode;
+typedef InstructionDependenceNode DataDependenceNode;
 
 class DataDependenceGraph : public DependenceGraph<Instruction> {
 public:
@@ -62,21 +63,13 @@ typedef DependenceBaseIterator<Instruction, const DataDependenceNode>
     ddg_const_iterator;
 }
 
-// GraphTraits for CDN and CDG.
+// GraphTraits for DDG.
 
 #include "llvm/ADT/GraphTraits.h"
 
 #include "DependenceGraphTraits.h"
 
 namespace llvm {
-
-template <>
-struct GraphTraits<icsa::DataDependenceNode *>
-    : public icsa::DNGraphTraits<Instruction> {};
-
-template <>
-struct GraphTraits<const icsa::DataDependenceNode *>
-    : public icsa::ConstDNGraphTraits<Instruction> {};
 
 template <>
 struct GraphTraits<icsa::DataDependenceGraph *>

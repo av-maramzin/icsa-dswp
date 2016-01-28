@@ -109,18 +109,33 @@ public:
     return Nodes.find(Value);
   }
 
-  void addEdge(typename NodeMapType::iterator from_it, typename NodeMapType::iterator to_it) {
+  void addEdge(typename NodeMapType::iterator from_it,
+               typename NodeMapType::iterator to_it) {
     auto from_node = from_it->second.get();
     auto to_node = to_it->second;
     from_node->addChild(to_node);
+  }
+
+  void addEdge(ValueType *from, ValueType *to) {
+    auto from_it = find(from);
+    auto to_it = find(to);
+    addEdge(from_it, to_it);
   }
 
   bool dependsOn(NodeType *A, NodeType *B) const;
 
   bool dependsOn(ValueType *A, ValueType *B) const;
 
-  /// Get all nodes that have a control dependence on R.
-  void getDependants(ValueType *R, SmallVectorImpl<ValueType *> &Result) const;
+  /// Get all nodes that have a dependence on R.
+  vector<ValueType *> getDependants(ValueType *R) const {
+    NodeType *N = getNode(R);
+    vector<ValueType *> result;
+    for (auto it = N->begin(); it != N->end(); ++it) {
+      ValueType *ptr = (*it)->getValue();
+      result.push_back(ptr);
+    }
+    return result;
+  }
 
   void releaseMemory() {
     firstValue = nullptr;
@@ -129,7 +144,7 @@ public:
 
   void print(raw_ostream &OS) const {
     OS << "=============================--------------------------------\n";
-    OS << "Control Dependence Graph: ";
+    OS << "Dependence Graph: ";
     OS << "<node: dependants>";
     OS << "\n";
     for (typename NodeMapType::const_iterator I = Nodes.begin();

@@ -66,21 +66,13 @@ typedef DependenceBaseIterator<Instruction, const MemoryDependenceNode>
     mdg_const_iterator;
 }
 
-// GraphTraits for CDN and CDG.
+// GraphTraits for MDG.
 
 #include "llvm/ADT/GraphTraits.h"
 
 #include "DependenceGraphTraits.h"
 
 namespace llvm {
-
-template <>
-struct GraphTraits<icsa::MemoryDependenceNode *>
-    : public icsa::DNGraphTraits<Instruction> {};
-
-template <>
-struct GraphTraits<const icsa::MemoryDependenceNode *>
-    : public icsa::ConstDNGraphTraits<Instruction> {};
 
 template <>
 struct GraphTraits<icsa::MemoryDependenceGraph *>
