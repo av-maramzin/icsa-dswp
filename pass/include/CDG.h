@@ -48,6 +48,7 @@ public:
   const ControlDependenceGraph &getCDG() const { return CDG; }
 
   void getAnalysisUsage(AnalysisUsage &Info) const override {
+    Info.setPreservesAll();
     Info.addRequired<PostDominatorTree>();
   }
 

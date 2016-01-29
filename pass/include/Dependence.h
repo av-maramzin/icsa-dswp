@@ -103,7 +103,9 @@ public:
     Nodes[Value] = shared_ptr<NodeType>(new NodeType(Value));
   }
 
-  NodeType *getNode(ValueType *Value) const;
+  NodeType *getNode(ValueType *Value) const {
+    return Nodes.at(Value).get();
+  }
 
   typename NodeMapType::iterator find(ValueType *Value) {
     return Nodes.find(Value);

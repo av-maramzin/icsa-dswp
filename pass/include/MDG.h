@@ -49,6 +49,7 @@ public:
   const MemoryDependenceGraph &getMDG() const { return MDG; }
 
   void getAnalysisUsage(AnalysisUsage &Info) const override {
+    Info.setPreservesAll();
     Info.addRequired<MemoryDependenceAnalysis>();
   }
 

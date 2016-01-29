@@ -47,6 +47,7 @@ public:
   const DataDependenceGraph &getDDG() const { return DDG; }
 
   void getAnalysisUsage(AnalysisUsage &Info) const override {
+    Info.setPreservesAll();
   }
 
   const char *getPassName() const override {
