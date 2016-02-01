@@ -32,6 +32,10 @@ using llvm::GraphTraits;
 #include "llvm/ADT/SmallVector.h"
 using llvm::SmallVector;
 
+#include "llvm/IR/Instructions.h"
+using llvm::PHINode;
+using llvm::Constant;
+
 #include "Util.h"
 
 namespace icsa {
@@ -83,11 +87,27 @@ bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
     }
   }
 
-  for (ddg_iterator mdg_it = mdg_begin; mdg_it != mdg_end; ++mdg_it) {
+  for (mdg_iterator mdg_it = mdg_begin; mdg_it != mdg_end; ++mdg_it) {
     Instruction *source = mdg_it->getValue();
     vector<Instruction *> deps = mdgp.getMDG().getDependants(mdg_it->getValue());
     for (Instruction *I : deps) {
       PDG.addEdge(source, I);
+    }
+  }
+
+  // Add edges for phi nodes that have constant values; the edges start from the
+  // last instruction of the BB that is associated with the constant value in
+  // the phi node and they end in the phi node.
+  for (ddg_iterator ddg_it = ddg_begin; ddg_it != ddg_end; ++ddg_it) {
+    Instruction *target = ddg_it->getValue();
+    if (PHINode *PN = dyn_cast<PHINode>(target)) {
+      int nVals = PN->getNumIncomingValues();
+      for (int i = 0; i < nVals; ++i) {
+        if (dyn_cast<Constant>(PN->getIncomingValue(i))) {
+          Instruction &source = PN->getIncomingBlock(i)->back();
+          PDG.addEdge(&source, target);
+        }
+      }
     }
   }
 

@@ -55,7 +55,7 @@ bool MemoryDependenceGraphPass::runOnFunction(Function &F) {
 
       MemDepResult mdr = mda.getDependency(I);
       Instruction *DepInst = mdr.getInst();
-      if (DepInst != nullptr) {
+      if (DepInst != nullptr && mdr.isDef()) {
         MDG.addEdge(MDG.find(DepInst), MDG.find(I));
       }
     }

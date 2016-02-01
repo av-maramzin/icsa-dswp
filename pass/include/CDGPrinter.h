@@ -36,7 +36,8 @@ struct DOTGraphTraits<const icsa::ControlDependenceGraph *>
 
   static string getCompleteNodeLabel(const icsa::ControlDependenceNode *Node,
         const icsa::ControlDependenceGraph *Graph) {
-    return getBBSourceCode(*Node->getValue());
+    return func_traits::getCompleteNodeLabel(Node->getValue(), Graph->getFunction());
+    // return getBBSourceCode(*Node->getValue());
   }
 
   string getNodeLabel(const icsa::ControlDependenceNode *Node,
