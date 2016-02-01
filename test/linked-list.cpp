@@ -11,5 +11,6 @@ void applyToList(ListNode *head, void (*f)(void *)) {
   ListNode *iterator = head;
   while (iterator != NULL) {
     f(iterator->payload);
+    iterator = iterator->next;
   }
 }
