@@ -7,14 +7,10 @@ using std::shared_ptr;
 using std::vector;
 #include <map>
 using std::map;
-
-#include "llvm/Support/raw_ostream.h"
-using llvm::raw_ostream;
-
-#include "llvm/ADT/SmallVector.h"
-using llvm::SmallVectorImpl;
-#include "llvm/ADT/SmallPtrSet.h"
-using llvm::SmallPtrSet;
+#include <stdexcept>
+using std::out_of_range;
+#include <array>
+using std::array;
 
 namespace icsa {
 
@@ -52,7 +48,7 @@ public:
       return true;
     }
 
-    SmallPtrSet<const ValueType *, 4> OtherChildren;
+    array<const ValueType *, 4> OtherChildren;
     for (const_iterator I = Other->begin(), E = Other->end(); I != E; ++I) {
       const ValueType *Value = (*I)->getValue();
       OtherChildren.insert(Value);
@@ -65,18 +61,6 @@ public:
       }
     }
     return false;
-  }
-
-  void print(raw_ostream &OS) const {
-    getValue()->printAsOperand(OS, false);
-    OS << ":";
-    for (const_iterator it = begin(); it != end(); ++it) {
-      if (it != begin()) {
-        OS << ",";
-      }
-      OS << " ";
-      (*it)->getValue()->printAsOperand(OS, false);
-    }
   }
 };
 
@@ -97,15 +81,25 @@ public:
 
   unsigned getNumNodes() const { return Nodes.size(); }
 
-  NodeType *operator[](ValueType *Value) const;
+  NodeType *operator[](ValueType *Value) const {
+    try {
+      return Nodes.at(Value).get();
+    } catch (out_of_range &) {
+      return nullptr;
+    }
+  }
+
+  NodeType *operator[](const NodeType &node) const {
+    return operator[](node.getValue());
+  }
 
   void addNode(ValueType *Value) {
     Nodes[Value] = shared_ptr<NodeType>(new NodeType(Value));
   }
 
-  NodeType *getNode(ValueType *Value) const {
-    return Nodes.at(Value).get();
-  }
+  void addNode(const NodeType &Node) { addNode(Node.getValue()); }
+
+  NodeType *getNode(ValueType *Value) const { return Nodes.at(Value).get(); }
 
   typename NodeMapType::iterator find(ValueType *Value) {
     return Nodes.find(Value);
@@ -122,6 +116,10 @@ public:
     auto from_it = find(from);
     auto to_it = find(to);
     addEdge(from_it, to_it);
+  }
+
+  void addEdge(const NodeType &from, const NodeType &to) {
+    addEdge(from.getValue(), to.getValue());
   }
 
   bool dependsOn(NodeType *A, NodeType *B) const;
@@ -142,18 +140,6 @@ public:
   void releaseMemory() {
     firstValue = nullptr;
     Nodes.clear();
-  }
-
-  void print(raw_ostream &OS) const {
-    OS << "=============================--------------------------------\n";
-    OS << "Dependence Graph: ";
-    OS << "<node: dependants>";
-    OS << "\n";
-    for (typename NodeMapType::const_iterator I = Nodes.begin();
-         I != Nodes.end(); ++I) {
-      I->second.get()->print(OS);
-      OS << '\n';
-    }
   }
 
   friend class DependenceBaseIterator<ValueType, DependenceNode<ValueType>>;
