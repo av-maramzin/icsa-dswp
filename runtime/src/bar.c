@@ -3,5 +3,5 @@
 #include <stdio.h>
 
 void bar() {
-	printf("bar\n");
+  printf("bar\n");
 }

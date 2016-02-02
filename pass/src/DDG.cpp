@@ -52,7 +52,7 @@ bool DataDependenceGraphPass::runOnFunction(Function &F) {
     }
   }
 
-  return true;
+  return false;
 }
 
 }

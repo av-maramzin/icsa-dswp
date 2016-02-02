@@ -25,6 +25,7 @@ struct GraphTraits<const FooGraph *> : public icsa::ConstDGGraphTraits<Foo> {};
 }
 
 int main() {
+  typedef typename icsa::GraphUtils<FooGraph> GUtils;
   FooGraph g;
   int n = 8;
   Foo foos[] = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -38,12 +39,21 @@ int main() {
   g.addEdge(&foos[1], &foos[0]);
   g.addEdge(&foos[7], &foos[5]);
 
-  auto sccs = icsa::GraphUtils<FooGraph>::findSCC(g);
+  auto sccs = GUtils::findSCC(g);
+
+  FooGraph transposedG;
+  GUtils::transpose(g, transposedG);
 
   for (const auto &pair : sccs) {
     cout << pair.first->getValue()->id << ':';
     for (const auto &s : pair.second) {
       cout << ' ' << s->getValue()->id;
+    }
+    cout << endl;
+    auto predecessors = GUtils::getPredecessors(pair.second, g, transposedG);
+    cout << "predecessors: ";
+    for (auto predecessor : predecessors) {
+      cout << ' ' << predecessor->getValue()->id;
     }
     cout << endl;
   }

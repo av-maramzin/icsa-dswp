@@ -54,8 +54,6 @@ public:
     return "Data Dependence Graph";
   }
 
-  void print(raw_ostream &OS, const Module *) const override { DDG.print(OS); }
-
   void releaseMemory() override { DDG.releaseMemory(); }
 };
 

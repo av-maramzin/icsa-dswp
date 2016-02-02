@@ -57,8 +57,6 @@ public:
     return "Memory Dependence Graph";
   }
 
-  void print(raw_ostream &OS, const Module *) const override { MDG.print(OS); }
-
   void releaseMemory() override { MDG.releaseMemory(); }
 };
 

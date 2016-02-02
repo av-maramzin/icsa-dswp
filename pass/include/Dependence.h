@@ -38,29 +38,17 @@ public:
     Children.push_back(C.get());
   }
 
+  void removeChild(iterator I) {
+    Children.erase(I);
+  }
+
   size_t getNumChildren() const { return Children.size(); }
 
   void clearAllChildren() { Children.clear(); }
 
   /// Return true if the nodes are not the same and false if they are the same.
   bool compare(const DependenceNode<ValueType> *Other) const {
-    if (getNumChildren() != Other->getNumChildren()) {
-      return true;
-    }
-
-    array<const ValueType *, 4> OtherChildren;
-    for (const_iterator I = Other->begin(), E = Other->end(); I != E; ++I) {
-      const ValueType *Value = (*I)->getValue();
-      OtherChildren.insert(Value);
-    }
-
-    for (const_iterator I = begin(), E = end(); I != E; ++I) {
-      const ValueType *Value = (*I)->getValue();
-      if (OtherChildren.count(Value) == 0) {
-        return true;
-      }
-    }
-    return false;
+    return Other->getValue() == getValue();
   }
 };
 
@@ -98,6 +86,21 @@ public:
   }
 
   void addNode(const NodeType &Node) { addNode(Node.getValue()); }
+
+  // Make sure there aren't any edges pointing to `N` and then remove it
+  // from the graph.
+  void removeNode(const NodeType &N) {
+    for (auto pair : Nodes) {
+      NodeType &parent = *(pair.second.get());
+      for (auto I = parent.begin(), E = parent.end(); I != E; ++I) {
+        if (N.compare(*I)) {
+          parent.removeChild(I);
+        }
+      }
+    }
+
+    Nodes.erase(N.getValue());
+  }
 
   NodeType *getNode(ValueType *Value) const { return Nodes.at(Value).get(); }
 

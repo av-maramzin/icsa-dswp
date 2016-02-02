@@ -61,8 +61,6 @@ public:
     return "Program Dependence Graph";
   }
 
-  void print(raw_ostream &OS, const Module *) const override { PDG.print(OS); }
-
   void releaseMemory() override { PDG.releaseMemory(); }
 };
 

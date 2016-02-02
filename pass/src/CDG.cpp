@@ -103,7 +103,7 @@ bool ControlDependenceGraphPass::runOnFunction(Function &F) {
     }
   }
 
-  return true;
+  return false;
 }
 
 }

@@ -35,6 +35,7 @@ using llvm::SmallVector;
 #include "llvm/IR/Instructions.h"
 using llvm::PHINode;
 using llvm::Constant;
+using llvm::BranchInst;
 
 #include "Util.h"
 
@@ -44,29 +45,32 @@ char ProgramDependenceGraphPass::ID = 0;
 RegisterPass<ProgramDependenceGraphPass>
     PDGRegister("pdg", "Build Program Dependence Graph");
 
-
 bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
   typedef GraphTraits<const ControlDependenceGraph *> CDGTraits;
   typedef GraphTraits<const DataDependenceGraph *> DDGTraits;
+  typedef GraphTraits<const MemoryDependenceGraph *> MDGTraits;
+  typedef GraphTraits<const ProgramDependenceGraph *> PDGTraits;
+
+  typedef typename DDGTraits::ChildIteratorType ddg_child_iterator;
+
   PDG.firstValue = F.getEntryBlock().begin();
 
-  ControlDependenceGraphPass &cdgp = Pass::getAnalysis<ControlDependenceGraphPass>();
-  MemoryDependenceGraphPass &mdgp = Pass::getAnalysis<MemoryDependenceGraphPass>();
+  ControlDependenceGraphPass &cdgp =
+      Pass::getAnalysis<ControlDependenceGraphPass>();
+  MemoryDependenceGraphPass &mdgp =
+      Pass::getAnalysis<MemoryDependenceGraphPass>();
   DataDependenceGraphPass &ddgp = Pass::getAnalysis<DataDependenceGraphPass>();
 
   ddg_iterator ddg_begin = DDGTraits::nodes_begin(&ddgp.getDDG());
   ddg_iterator ddg_end = DDGTraits::nodes_end(&ddgp.getDDG());
 
-  mdg_iterator mdg_begin = DDGTraits::nodes_begin(&mdgp.getMDG());
-  mdg_iterator mdg_end = DDGTraits::nodes_end(&mdgp.getMDG());
-
-  cdg_iterator cdg_begin = CDGTraits::nodes_begin(&cdgp.getCDG());
-  cdg_iterator cdg_end = CDGTraits::nodes_end(&cdgp.getCDG());
-
   // Add nodes.
   for (ddg_iterator ddg_it = ddg_begin; ddg_it != ddg_end; ++ddg_it) {
     PDG.addNode(ddg_it->getValue());
   }
+
+  cdg_iterator cdg_begin = CDGTraits::nodes_begin(&cdgp.getCDG());
+  cdg_iterator cdg_end = CDGTraits::nodes_end(&cdgp.getCDG());
 
   // Add edges.
   for (cdg_iterator cdg_it = cdg_begin; cdg_it != cdg_end; ++cdg_it) {
@@ -81,15 +85,20 @@ bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
 
   for (ddg_iterator ddg_it = ddg_begin; ddg_it != ddg_end; ++ddg_it) {
     Instruction *source = ddg_it->getValue();
-    vector<Instruction *> deps = ddgp.getDDG().getDependants(ddg_it->getValue());
+    vector<Instruction *> deps =
+        ddgp.getDDG().getDependants(ddg_it->getValue());
     for (Instruction *I : deps) {
       PDG.addEdge(source, I);
     }
   }
 
+  mdg_iterator mdg_begin = MDGTraits::nodes_begin(&mdgp.getMDG());
+  mdg_iterator mdg_end = MDGTraits::nodes_end(&mdgp.getMDG());
+
   for (mdg_iterator mdg_it = mdg_begin; mdg_it != mdg_end; ++mdg_it) {
     Instruction *source = mdg_it->getValue();
-    vector<Instruction *> deps = mdgp.getMDG().getDependants(mdg_it->getValue());
+    vector<Instruction *> deps =
+        mdgp.getMDG().getDependants(mdg_it->getValue());
     for (Instruction *I : deps) {
       PDG.addEdge(source, I);
     }
@@ -111,7 +120,28 @@ bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
     }
   }
 
-  return true;
-}
+  // Trim leaf jump instructions
+  vector<PDGTraits::NodeType *> removeNodes;
+  pdg_iterator pdg_begin = PDGTraits::nodes_begin(&PDG);
+  pdg_iterator pdg_end = PDGTraits::nodes_end(&PDG);
+  for (pdg_iterator pdg_it = pdg_begin; pdg_it != pdg_end; ++pdg_it) {
+    Instruction *parent = pdg_it->getValue();
+    for (ddg_child_iterator I = DDGTraits::child_begin(*pdg_it),
+                            E = DDGTraits::child_end(*pdg_it);
+         I != E; ++I) {
+      DDGTraits::NodeType *target = *I;
+      BranchInst *BI = dyn_cast<BranchInst>(target->getValue());
+      if (BI != nullptr && BI->isUnconditional() &&
+          target->getNumChildren() == 0) {
+        removeNodes.push_back(target);
+      }
+    }
+  }
 
+  for (auto node : removeNodes) {
+    PDG.removeNode(*node);
+  }
+
+  return false;
+}
 }

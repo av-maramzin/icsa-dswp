@@ -61,7 +61,7 @@ bool MemoryDependenceGraphPass::runOnFunction(Function &F) {
     }
   }
 
-  return true;
+  return false;
 }
 
 }

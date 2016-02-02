@@ -56,10 +56,6 @@ public:
     return "Control Dependence Graph";
   }
 
-  void print(raw_ostream &OS, const Module *) const override {
-    CDG.print(OS);
-  }
-
   void releaseMemory() override { CDG.releaseMemory(); }
 };
 
