@@ -23,27 +23,22 @@ template <typename GraphType> class Kosaraju {
 
 public:
   static map<NodeType *, vector<NodeType *>> findSCC(const GraphType &g) {
+    // Used for the second DFS traversal: assignComponent. The intermediate list
+    // indicating the order of the second traversal - postOrder - contains a
+    // list of nodes from the `transposedG` graph. When it is used in
+    // `assignComponent` the nodes from `g` are used for the final result stored
+    // in `component`.
     GraphType transposedG;
     transpose(g, transposedG);
 
-    map<NodeType *, bool> visited;
-    for (node_iterator I = GTraits::nodes_begin(&g), E = GTraits::nodes_end(&g);
-         I != E; ++I) {
-      visited[*I] = false;
-    }
-
+    map<NodeType *, bool> visited = createVisited(g);
     vector<NodeType *> postOrder;
     for (node_iterator I = GTraits::nodes_begin(&g), E = GTraits::nodes_end(&g);
          I != E; ++I) {
       postOrderEnumerate(**I, visited, postOrder, transposedG);
     }
 
-    map<NodeType *, NodeType *> component;
-    for (node_iterator I = GTraits::nodes_begin(&g), E = GTraits::nodes_end(&g);
-         I != E; ++I) {
-      component[*I] = nullptr;
-    }
-
+    map<NodeType *, NodeType *> component = createComponent(g);
     for (NodeType *u : postOrder) {
       assignComponent(*u, *u, component, g);
     }
@@ -55,6 +50,30 @@ public:
     }
 
     return result;
+  }
+
+private:
+  // Returns a map from each node of the graph to `false`. Relying on move
+  // semantics for efficient return. To be used as a memory of which node is
+  // visited.
+  static map<NodeType *, bool> createVisited(const GraphType &g) {
+    map<NodeType *, bool> visited;
+    for (node_iterator I = GTraits::nodes_begin(&g), E = GTraits::nodes_end(&g);
+         I != E; ++I) {
+      visited[*I] = false;
+    }
+    return visited;
+  }
+
+  // Returns a map from each node to `nullptr`. To be used as a map from nodes
+  // to the SCC they belong to.
+  static map<NodeType *, NodeType *> createComponent(const GraphType &g) {
+    map<NodeType *, NodeType *> component;
+    for (node_iterator I = GTraits::nodes_begin(&g), E = GTraits::nodes_end(&g);
+         I != E; ++I) {
+      component[*I] = nullptr;
+    }
+    return component;
   }
 
   // TODO: implement move constructor and move operator in DependenceGraph and
@@ -75,13 +94,14 @@ public:
     }
   }
 
-  // u - start node of enumeration
-  // visited - map from nodes to whether they were visited or not
-  // result - a list of the nodes in post-order
-  // transposedG - graph from which to take the nodes; this is an artefact of
-  //   the implementation of graphs; there is no way to use the same nodes as
-  //   the forward graph and take their in-neighbours later, if another graph is
-  //   not used.
+  /// u - start node of enumeration
+  /// visited - map from nodes to whether they were visited or not
+  /// result - a list of the nodes in post-order
+  /// transposedG - graph from which to take the nodes; this is an artefact of
+  ///   the implementation of graphs; there is no way to use the same nodes as
+  ///   the forward graph and take their in-neighbours later, if another graph
+  ///   is
+  ///   not used.
   static void postOrderEnumerate(const NodeType &u,
                                  map<NodeType *, bool> &visited,
                                  vector<NodeType *> &result,
@@ -97,6 +117,10 @@ public:
     }
   }
 
+  /// u - current node of recursive traversal
+  /// root - current root of traversal
+  /// component - store the result here; a map from nodes to their SCC
+  /// g - use nodes from this graph as members of `component`
   static void assignComponent(const NodeType &u, const NodeType &root,
                               map<NodeType *, NodeType *> &component,
                               const GraphType &g) {
