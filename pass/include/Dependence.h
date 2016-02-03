@@ -1,212 +1,76 @@
-#ifndef ICSA_DSWP_DEPENDENCE_H
-#define ICSA_DSWP_DEPENDENCE_H
+#ifndef ICSA_DSWP_DEPENDENCE
+#define ICSA_DSWP_DEPENDENCE
 
-#include <memory>
-using std::shared_ptr;
-#include <vector>
-using std::vector;
 #include <map>
 using std::map;
-#include <stdexcept>
-using std::out_of_range;
-#include <array>
-using std::array;
+using std::pair;
+#include <set>
+using std::set;
+
+#include <memory>
+using std::unique_ptr;
 
 namespace icsa {
 
-// Designed after DomTreeNodeBase in llvm/Support/GenericDomTree.h.
-template <typename ValueType> class DependenceNode {
-  ValueType *TheValue;
-  vector<DependenceNode<ValueType> *> Children;
-
-public:
-  typedef vector<DependenceNode<ValueType> *> vector_type;
-  typedef typename vector_type::iterator iterator;
-  typedef typename vector_type::const_iterator const_iterator;
-
-  iterator begin() { return Children.begin(); }
-  iterator end() { return Children.end(); }
-  const_iterator begin() const { return Children.begin(); }
-  const_iterator end() const { return Children.end(); }
-
-  ValueType *getValue() const { return TheValue; }
-  const vector_type &getChildren() const { return Children; }
-
-  DependenceNode<ValueType>(ValueType *Value) : TheValue(Value) {}
-
-  void addChild(shared_ptr<DependenceNode<ValueType>> C) {
-    Children.push_back(C.get());
-  }
-
-  void removeChild(iterator I) {
-    Children.erase(I);
-  }
-
-  size_t getNumChildren() const { return Children.size(); }
-
-  void clearAllChildren() { Children.clear(); }
-
-  /// Return true if the nodes are not the same and false if they are the same.
-  bool compare(const DependenceNode<ValueType> *Other) const {
-    return Other->getValue() == getValue();
-  }
-};
-
-// Forward declaration for friends in DependenceGraph.
-template <typename ValueType, typename NodeType> class DependenceBaseIterator;
-
-// Designed after the PostDominatorTree struct in
-// llvm/Analysis/PostDominators.h.
 template <typename ValueType> class DependenceGraph {
 protected:
-  typedef DependenceNode<ValueType> NodeType;
-  typedef map<ValueType *, shared_ptr<NodeType>> NodeMapType;
-  NodeMapType Nodes;
-  ValueType *firstValue;
+  map<const ValueType *, set<const ValueType *>> Nodes;
 
 public:
-  NodeType *getRootNode() const { return getNode(firstValue); }
+  typedef typename map<const ValueType *, set<const ValueType *>>::iterator
+      nodes_iterator;
+  typedef
+      typename map<const ValueType *, set<const ValueType *>>::const_iterator
+          const_nodes_iterator;
 
-  unsigned getNumNodes() const { return Nodes.size(); }
+  typedef typename set<const ValueType *>::iterator dependant_iterator;
+  typedef
+      typename set<const ValueType *>::const_iterator const_dependant_iterator;
 
-  NodeType *operator[](ValueType *Value) const {
-    try {
-      return Nodes.at(Value).get();
-    } catch (out_of_range &) {
-      return nullptr;
+  void addNode(const ValueType *Value) { Nodes[Value]; }
+
+  void addEdge(const ValueType *From, const ValueType *To) {
+    Nodes[From].insert(To);
+  }
+
+  /// Makes sure there are no edges pointing to `Value` and then removes it
+  /// from `Nodes`.
+  void removeNode(const ValueType *Value) {
+    for (auto &Node : Nodes) {
+      Node.second.erase(Value);
     }
+    Nodes.erase(Value);
   }
 
-  NodeType *operator[](const NodeType &node) const {
-    return operator[](node.getValue());
+  /// Checks if node B depends on node A.
+  bool dependsOn(const ValueType *A, const ValueType *B) {
+    return Nodes[A].find(B) != Nodes[A].end();
   }
 
-  void addNode(ValueType *Value) {
-    Nodes[Value] = shared_ptr<NodeType>(new NodeType(Value));
+  /// Gets the set of nodes that depend on node A.
+  const set<const ValueType *> &getDependants(const ValueType *A) const {
+    return Nodes.at(A);
   }
 
-  void addNode(const NodeType &Node) { addNode(Node.getValue()); }
-
-  // Make sure there aren't any edges pointing to `N` and then remove it
-  // from the graph.
-  void removeNode(const NodeType &N) {
-    for (auto pair : Nodes) {
-      NodeType &parent = *(pair.second.get());
-      for (auto I = parent.begin(), E = parent.end(); I != E; ++I) {
-        if (N.compare(*I)) {
-          parent.removeChild(I);
-        }
-      }
-    }
-
-    Nodes.erase(N.getValue());
+  dependant_iterator child_begin(const ValueType *A) {
+    return Nodes.at(A).begin();
+  }
+  dependant_iterator child_end(const ValueType *A) { return Nodes.at(A).end(); }
+  const_dependant_iterator child_cbegin(const ValueType *A) const {
+    return Nodes.at(A).cbegin();
+  }
+  const_dependant_iterator child_cend(const ValueType *A) const {
+    return Nodes.at(A).cend();
   }
 
-  NodeType *getNode(ValueType *Value) const { return Nodes.at(Value).get(); }
+  /// Remove all nodes from the graph.
+  void clear() { Nodes.clear(); }
 
-  typename NodeMapType::iterator find(ValueType *Value) {
-    return Nodes.find(Value);
-  }
+  nodes_iterator nodes_begin() { return Nodes.begin(); }
+  const_nodes_iterator nodes_cbegin() const { return Nodes.cbegin(); }
 
-  void addEdge(typename NodeMapType::iterator from_it,
-               typename NodeMapType::iterator to_it) {
-    auto from_node = from_it->second.get();
-    auto to_node = to_it->second;
-    from_node->addChild(to_node);
-  }
-
-  void addEdge(ValueType *from, ValueType *to) {
-    auto from_it = find(from);
-    auto to_it = find(to);
-    addEdge(from_it, to_it);
-  }
-
-  void addEdge(const NodeType &from, const NodeType &to) {
-    addEdge(from.getValue(), to.getValue());
-  }
-
-  bool dependsOn(NodeType *A, NodeType *B) const;
-
-  bool dependsOn(ValueType *A, ValueType *B) const;
-
-  /// Get all nodes that have a dependence on R.
-  vector<ValueType *> getDependants(ValueType *R) const {
-    NodeType *N = getNode(R);
-    vector<ValueType *> result;
-    for (auto it = N->begin(); it != N->end(); ++it) {
-      ValueType *ptr = (*it)->getValue();
-      result.push_back(ptr);
-    }
-    return result;
-  }
-
-  void releaseMemory() {
-    firstValue = nullptr;
-    Nodes.clear();
-  }
-
-  friend class DependenceBaseIterator<ValueType, DependenceNode<ValueType>>;
-  friend class DependenceBaseIterator<ValueType,
-                                      const DependenceNode<ValueType>>;
-};
-
-// Iterator for all Dependence nodes.
-template <typename ValueType, typename NodeType>
-class DependenceBaseIterator
-    : public std::iterator<std::bidirectional_iterator_tag, NodeType, int,
-                           NodeType *, NodeType *> {
-  typedef std::iterator<std::bidirectional_iterator_tag, NodeType, int,
-                        NodeType *, NodeType *> super;
-
-public:
-  typedef DependenceGraph<ValueType> GraphType;
-  typedef typename super::pointer pointer;
-  typedef typename super::reference reference;
-  typedef typename GraphType::NodeMapType::const_iterator NodeMapIterator;
-
-private:
-  const DependenceGraph<ValueType> &Graph;
-  NodeMapIterator idx;
-
-public:
-  // Begin iterator.
-  explicit inline DependenceBaseIterator(const GraphType &G)
-      : Graph(G), idx(G.Nodes.begin()) {}
-
-  // End iterator.
-  inline DependenceBaseIterator(const GraphType &G, bool)
-      : Graph(G), idx(G.Nodes.end()) {}
-
-  inline bool operator==(const DependenceBaseIterator &x) const {
-    return idx == x.idx;
-  }
-  inline bool operator!=(const DependenceBaseIterator &x) const {
-    return !operator==(x);
-  }
-
-  inline reference operator*() const { return idx->second.get(); }
-  inline pointer operator->() const { return operator*(); }
-
-  inline DependenceBaseIterator &operator++() {
-    ++idx;
-    return *this;
-  }
-
-  inline DependenceBaseIterator operator++(int) {
-    DependenceBaseIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  inline DependenceBaseIterator &operator--() {
-    --idx;
-    return *this;
-  }
-  inline DependenceBaseIterator operator--(int) {
-    DependenceBaseIterator tmp = *this;
-    --*this;
-    return tmp;
-  }
+  nodes_iterator nodes_end() { return Nodes.end(); }
+  const_nodes_iterator nodes_cend() const { return Nodes.cend(); }
 };
 }
 

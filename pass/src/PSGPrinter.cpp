@@ -14,8 +14,8 @@ using llvm::RegisterPass;
 #include "llvm/PassAnalysisSupport.h"
 using llvm::AnalysisUsage;
 
-#include "MDG.h"
-using icsa::MemoryDependenceGraphPass;
+#include "PSG.h"
+using icsa::PDGSCCGraphPass;
 
 #include "DependenceTraits.h"
 using icsa::DepGraphTraitsWrapper;
@@ -23,32 +23,32 @@ using icsa::DepGraphTraitsWrapper;
 #include "Util.h"
 using icsa::instructionToFunctionName;
 
-#include "InstDOTTraits.h"
+#include "InstSetDOTTraits.h"
 // Defines DOTGraphTraits for DepGraphTraitsWrapper<Instruction>.
 
 namespace icsa {
 
-struct MDGPrinter : public FunctionPass {
+struct PSGPrinter : public FunctionPass {
   static char ID;
-  MDGPrinter() : FunctionPass(ID) {}
+  PSGPrinter() : FunctionPass(ID) {}
 
   bool runOnFunction(Function &F) override {
-    MemoryDependenceGraphPass &mdg =
-        Pass::getAnalysis<MemoryDependenceGraphPass>();
-    DependenceGraph<Instruction> G = mdg.getMDG();
-    string FuncName = instructionToFunctionName(*G.nodes_begin()->first);
-    DepGraphTraitsWrapper<Instruction>(G)
-        .writeToFile("mdg." + FuncName + ".dot");
+    PDGSCCGraphPass &psg = Pass::getAnalysis<PDGSCCGraphPass>();
+    DependenceGraph<set<const Instruction *>> G = psg.getPSG();
+    const set<const Instruction *> *firstSCC = G.nodes_begin()->first;
+    string FuncName = instructionToFunctionName(**firstSCC->begin());
+    DepGraphTraitsWrapper<set<const Instruction *>>(G)
+        .writeToFile("psg." + FuncName + ".dot");
     return false;
   }
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.setPreservesAll();
-    AU.addRequired<MemoryDependenceGraphPass>();
+    AU.addRequired<PDGSCCGraphPass>();
   }
 };
 
-char MDGPrinter::ID = 0;
-RegisterPass<MDGPrinter>
-    MDGPrinterRegister("dot-mdg", "Print MDG of function to 'dot' file");
+char PSGPrinter::ID = 0;
+RegisterPass<PSGPrinter>
+    PSGPrinterRegister("dot-psg", "Print PSG of function to 'dot' file");
 }

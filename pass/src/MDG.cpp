@@ -21,6 +21,8 @@ using llvm::MemoryDependenceAnalysis;
 using llvm::MemDepResult;
 #include "llvm/IR/Function.h"
 using llvm::Function;
+#include "llvm/IR/InstIterator.h"
+using llvm::inst_iterator;
 
 #include "Util.h"
 
@@ -31,37 +33,29 @@ RegisterPass<MemoryDependenceGraphPass>
     MDGRegister("mdg", "Build Memory Dependence Graph");
 
 bool MemoryDependenceGraphPass::runOnFunction(Function &F) {
-  MDG.firstValue = F.getEntryBlock().begin();
-
   MemoryDependenceAnalysis &mda = Pass::getAnalysis<MemoryDependenceAnalysis>();
 
   // Add nodes.
-  for (auto it = F.begin(); it != F.end(); ++it) {
-    const BasicBlock& BB = *it;
-    for (auto jt = BB.begin(); jt != BB.end(); ++jt) {
-      const Instruction& I = *jt;
-      MDG.addNode(const_cast<Instruction*>(&I));
-    }
+  for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
+    Instruction *Inst = &*I;
+    MDG.addNode(Inst);
   }
 
   // Add edges.
-  for (auto it = F.begin(); it != F.end(); ++it) {
-    const BasicBlock& BB = *it;
-    for (auto jt = BB.begin(); jt != BB.end(); ++jt) {
-      Instruction* I = const_cast<Instruction*>(&*jt);
-      if (!I->mayReadOrWriteMemory()) {
-        continue;
-      }
+  for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
+    Instruction *Inst = &*I;
+    if (!Inst->mayReadOrWriteMemory()) {
+      continue;
+    }
 
-      MemDepResult mdr = mda.getDependency(I);
-      Instruction *DepInst = mdr.getInst();
-      if (DepInst != nullptr && mdr.isDef()) {
-        MDG.addEdge(MDG.find(DepInst), MDG.find(I));
-      }
+    MemDepResult mdr = mda.getDependency(Inst);
+    Instruction *DepInst = mdr.getInst();
+    if (DepInst != nullptr && mdr.isDef()) {
+      // Add dependence only if it's a def dependence.
+      MDG.addEdge(DepInst, Inst);
     }
   }
 
   return false;
 }
-
 }

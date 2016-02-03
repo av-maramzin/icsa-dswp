@@ -2,7 +2,7 @@
 #include "GraphUtils.h"
 
 #include "Dependence.h"
-#include "DependenceGraphTraits.h"
+#include "DependenceTraits.h"
 
 #include <map>
 using std::map;
@@ -14,38 +14,26 @@ using std::endl;
 struct Foo {
   int id;
 };
-typedef icsa::DependenceGraph<Foo> FooGraph;
-
-namespace llvm {
-
-template <> struct GraphTraits<FooGraph *> : public icsa::DGGraphTraits<Foo> {};
-
-template <>
-struct GraphTraits<const FooGraph *> : public icsa::ConstDGGraphTraits<Foo> {};
-}
+typedef icsa::DependenceGraph<int> FooGraph;
 
 int main() {
   FooGraph g;
   int n = 8;
-  Foo foos[] = {0, 1, 2, 3, 4, 5, 6, 7};
-  for (Foo &foo : foos) {
-    g.addNode(&foo);
+  int ints[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  for (int &i : ints) {
+    g.addNode(&i);
   }
 
   for (int i = 1; i < n; ++i) {
-    g.addEdge(&foos[i - 1], &foos[i]);
+    g.addEdge(&ints[i - 1], &ints[i]);
   }
-  g.addEdge(&foos[1], &foos[0]);
-  g.addEdge(&foos[7], &foos[5]);
+  g.addEdge(&ints[1], &ints[0]);
+  g.addEdge(&ints[7], &ints[5]);
 
-  auto sccs = icsa::GraphUtils<FooGraph>::findSCC(g);
+  map<const int *, const int *> sccs = icsa::GraphUtils<int>::findSCC(g);
 
   for (const auto &pair : sccs) {
-    cout << pair.first->getValue()->id << ':';
-    for (const auto &s : pair.second) {
-      cout << ' ' << s->getValue()->id;
-    }
-    cout << endl;
+    cout << *pair.first << ": " << *pair.second << endl;
   }
 
   return 0;
