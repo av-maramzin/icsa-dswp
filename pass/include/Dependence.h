@@ -3,14 +3,16 @@
 
 #include <memory>
 using std::shared_ptr;
+#include <array>
+using std::array;
 #include <vector>
 using std::vector;
 #include <map>
 using std::map;
 #include <stdexcept>
 using std::out_of_range;
-#include <array>
-using std::array;
+#include <algorithm>
+using std::find;
 
 namespace icsa {
 
@@ -38,8 +40,15 @@ public:
     Children.push_back(C.get());
   }
 
-  void removeChild(iterator I) {
-    Children.erase(I);
+  void removeChild(iterator I) { Children.erase(I); }
+
+  bool hasChild(ValueType *Value) {
+    for (iterator I = begin(), E = end(); I != E; ++I) {
+      if ((*I)->getValue() == Value) {
+        return true;
+      }
+    }
+    return false;
   }
 
   size_t getNumChildren() const { return Children.size(); }
@@ -47,6 +56,7 @@ public:
   void clearAllChildren() { Children.clear(); }
 
   /// Return true if the nodes are not the same and false if they are the same.
+  /// Two nodes are the same if they refer to the same value.
   bool compare(const DependenceNode<ValueType> *Other) const {
     return Other->getValue() == getValue();
   }
@@ -104,12 +114,12 @@ public:
 
   NodeType *getNode(ValueType *Value) const { return Nodes.at(Value).get(); }
 
-  typename NodeMapType::iterator find(ValueType *Value) {
+  typename NodeMapType::const_iterator find(ValueType *Value) const {
     return Nodes.find(Value);
   }
 
-  void addEdge(typename NodeMapType::iterator from_it,
-               typename NodeMapType::iterator to_it) {
+  void addEdge(typename NodeMapType::const_iterator from_it,
+               typename NodeMapType::const_iterator to_it) {
     auto from_node = from_it->second.get();
     auto to_node = to_it->second;
     from_node->addChild(to_node);
@@ -125,9 +135,14 @@ public:
     addEdge(from.getValue(), to.getValue());
   }
 
-  bool dependsOn(NodeType *A, NodeType *B) const;
+  bool dependsOn(const NodeType &A, const NodeType &B) const {
+    return dependsOn(A.getValue(), B.getValue());
+  }
 
-  bool dependsOn(ValueType *A, ValueType *B) const;
+  bool dependsOn(ValueType *A, ValueType *B) const {
+    auto A_it = find(A);
+    return A_it->second.get()->hasChild(B);
+  }
 
   /// Get all nodes that have a dependence on R.
   vector<ValueType *> getDependants(ValueType *R) const {

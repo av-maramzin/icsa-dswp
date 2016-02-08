@@ -13,6 +13,9 @@ using std::vector;
 #include <set>
 using std::set;
 
+#include <string>
+using std::string;
+
 #include "llvm/PassSupport.h"
 using llvm::RegisterPass;
 
@@ -34,6 +37,12 @@ using llvm::DominatorTree;
 
 #include "llvm/Support/Casting.h"
 using llvm::dyn_cast;
+
+#include "llvm/IR/DebugInfoMetadata.h"
+using llvm::DILocation;
+
+#include "llvm/ADT/StringRef.h"
+using llvm::StringRef;
 
 namespace icsa {
 
@@ -120,8 +129,23 @@ bool FindDSWP::runOnFunction(Function &F) {
     return false;
   }
 
-  roos << "Found a DSWP opportunity!\n\n";
+  size_t icsa_pos = F.getName().find("icsa");
+  if (icsa_pos == string::npos || icsa_pos > 10) {
+    // TMP
+    return false;
+  }
 
+  roos << "Found a DSWP opportunity in function " << F.getName() << "\n\n";
+  Instruction &I = (*(*LI.begin())->block_begin())->front();
+  if (DILocation *Loc = I.getDebugLoc()) { // Here I is an LLVM instruction
+    unsigned Line = Loc->getLine();
+    unsigned Column = Loc->getColumn();
+    StringRef File = Loc->getFilename();
+    StringRef Dir = Loc->getDirectory();
+    roos << Dir << File << ":" << Line << ":" << Column << '\n';
+  }
+
+  /*
   roos << "Loop:\n";
   for (LoopInfo::iterator I = LI.begin(), E = LI.end(); I != E; ++I) {
     Loop *L = *I;
@@ -145,6 +169,7 @@ bool FindDSWP::runOnFunction(Function &F) {
     roos << '\n';
   }
   roos << '\n';
+  */
 
   return false;
 }
