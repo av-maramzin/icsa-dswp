@@ -1,9 +1,6 @@
 #ifndef ICSA_DSWP_CDG_H
 #define ICSA_DSWP_CDG_H
 
-#include "llvm/Support/raw_ostream.h"
-using llvm::raw_ostream;
-
 #include "llvm/IR/Module.h"
 using llvm::Module;
 #include "llvm/IR/Function.h"

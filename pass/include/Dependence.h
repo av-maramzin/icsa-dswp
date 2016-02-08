@@ -3,14 +3,17 @@
 
 #include <memory>
 using std::shared_ptr;
+
 #include <array>
 using std::array;
 #include <vector>
 using std::vector;
 #include <map>
 using std::map;
+
 #include <stdexcept>
 using std::out_of_range;
+
 #include <algorithm>
 using std::find;
 
