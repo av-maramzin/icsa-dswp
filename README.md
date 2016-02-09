@@ -30,10 +30,6 @@ binary directory on your system PATH in order to build and use the pass.
 Run `tools/build.sh`. This script will use `cmake 2.8` and `make` in order to
 build the project.
 
-### Testing
-
-Run `tools/test.sh`. This script will run the unit tests for the project.
-
 Development
 -----------
 
@@ -42,21 +38,40 @@ Development
 The following text would describe the repository when the implementation is
 completed - it may not describe its working state.
 
-### Structure
+### Available Passes
 
 The `pass` directory contains the code for `libdswp.so` - a library that
-contains an LLVM 3.7.0 loop pass that implements DSWP and a function pass that
-builds the [Control Dependence Graph][cytron1989] of a function.
+contains the following LLVM 3.7.0 function passes:
+ * `ddg` - builds the Data Dependence Graph of a function using the Use-Def
+   chains already built-in LLVM; in order for this pass to work, the bytecode
+   should be in SSA form;
+ * `mdg` - builds the Memory Dependence Graph of a function using
+   `llvm/Analysis/MemoryDependenceAnalysis.h`; only instruction definition
+   dependencies are considered (no clobber/alias dependencies);
+ * `cdg` - builds the [Control Dependence Graph][cytron1989] of a function;
+ * `pdg` - combines the previous three graphs in a single graph of instruction
+   dependencies; note that since `cdg` produces a basic block dependence graph
+   all of the instructions in the dependant block are made to depend on the
+   branch instruction of the dependency source;
+ * `psg` - incomplete and memory leaking experimental pass; finds the Strongly
+   Connected Components of the Program Dependence Graph and builds a graph out
+   of them;
+ * `dot-XXX` - prints a .dot representation of each function for the graph build
+   by `XXX` to a file; `XXX` is one of the five graph building passes;
+ * `find-dswp` - uses the experimental `psg` pass to analyse an LLVM bytecode
+   file and prints DSWP opportunities to the standard output.
+
+In order to analyze a `.cpp` file called `foo.cpp`, make sure you have LLVM
+3.7.0 installed and do the following:
+
+```
+clang++ foo.cpp -c -emit-llvm -o foo.bc
+opt -mem2dep foo.bc -o ssa.bc
+opt -load $ICSA_DSWP_HOME/build/pass/libdswp.so -find-dswp ssa.bc -o /dev/null
+```
 
 The `test` directory contains example programs on which the DSWP pass can be
-tested and demonstrated. Run `tools/test.py` in order to test that the pass
-maintains the semantics of the test programs.
-
-Optionally, `tools/test.py` takes two arguments:
-
- * `--no-clean` or `-n` inhibits the removal of the temporary files during
-   testing; they can then be inspected and used for further transformations
- * `--verbose` or `-V` shows the standard output of running the DSWP pass.
+tested and demonstrated.
 
 [ottoni2005]: (http://dl.acm.org/citation.cfm?id=1100543)
 [2011-dswp-prj]: (http://www.cs.cmu.edu/~fuyaoz/courses/15745/)
