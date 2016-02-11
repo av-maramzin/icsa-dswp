@@ -1,18 +1,3 @@
-/*******************************************************************************
- *
- * (please update README.md if you modify this comment).
- *
- * The simplest use of the `DependenceGraph` class is in the implementation of
- * the Data Dependence Graph (DDG) LLVM function pass, which builds the DDG of
- * a function using the def-use chains of instructions. This file defines a
- * trivial `FunctionPass` - `DataDependenceGraphPass`. The non-trivial parts of
- * the definition are that it is storing an instance of
- * `DependenceGraph<Instruction>` which can be accessed via a getter method and
- * cleared via `releaseMemory()`, and the declaration inside
- * `getAnalysisUsage()` that the pass doesn't modify the given `LLVM IR` in any
- * way.
- *
-*******************************************************************************/
 #ifndef ICSA_DSWP_DDG_H
 #define ICSA_DSWP_DDG_H
 

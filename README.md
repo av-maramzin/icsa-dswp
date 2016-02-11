@@ -80,9 +80,6 @@ while looking at the source code, so go ahead and open an editor.
 
 #### Dependence.h
 
-(please update the documenting comment in pass/include/Dependence.h if you
-modify this section)
-
 The starting point for understanding the code is the `Dependence.h` header file.
 It implements the template class `DependenceGraph<ValueType>`. This class
 represents dependences between abstract objects of type `ValueType` - let's call
@@ -110,10 +107,9 @@ dependants of a single node, one needs to use `iterator->second.begin()` and
 `iterator->second.end()`. The type of these iterators is `std::set<ValueType
 *>::iterator` (aliased to `dependant_iterator`).
 
-### DDG.h and DDG.cpp
+In order to test this class, compile and run `pass/test/TestDependence.cpp`.
 
-(please update the documenting comments in `pass/include/DDG.h` and
-`pass/src/DDG.cpp` if you modify this section)
+### DDG.h and DDG.cpp
 
 The simplest use of the `DependenceGraph` class is in the implementation of the
 Data Dependence Graph (DDG) LLVM function pass, which builds the DDG of a
@@ -130,6 +126,9 @@ LLVM boilerplate (registering the pass), but the entry point is the
 adds them to the internal (for the pass) `DependenceGraph` as nodes. Then it
 goes over the instructions again and adds all of their 'users' from their
 def-use chain as nodes dependant on the instructions in the `DependenceGraph`.
+
+In order to test this pass, build the project and execute `tools/test-ddg.sh`
+with a test `cpp` file as a command line argument.
 
 This pass is useless on its own, as there is no way to extract its result. For
 this reason, we need to look at `DDGPrinter.h` and `DDGPrinter.cpp`.
