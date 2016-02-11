@@ -73,6 +73,67 @@ opt -load $ICSA_DSWP_HOME/build/pass/libdswp.so -find-dswp ssa.bc -o /dev/null
 The `test` directory contains example programs on which the DSWP pass can be
 tested and demonstrated.
 
+### Code Structure
+
+This section talks about the source code of the project. It is meant to be read
+while looking at the source code, so go ahead and open an editor.
+
+#### Dependence.h
+
+(please update the documenting comment in pass/include/Dependence.h if you
+modify this section)
+
+The starting point for understanding the code is the `Dependence.h` header file.
+It implements the template class `DependenceGraph<ValueType>`. This class
+represents dependences between abstract objects of type `ValueType` - let's call
+these objects 'nodes' for the sake of discussion. The dependences are
+represented as a map from nodes to sets of nodes that depend on them.
+
+It is worth noting that nodes are not stored in the Graph, but elsewhere, and
+are referenced by using pointers to them. For example, if the node `Value` has
+type `ValueType *` then internally for the `DependenceGraph` class the nodes
+which depend on `Value` are stored in the set accessed as `Nodes[Value]`. The
+type of this set is `std::set<ValueType *>`. In other words, the type of `Nodes`
+is `std::map<ValueType*, std::set<ValueType *>>`.
+
+There is a common sense interface exposed by `DependenceGraph<ValueType>`,
+allowing users to add and remove nodes, add edges, check if a node depends on
+another one, and clear the graph. There are also `begin` and `end` iterators
+which allow the traversal of the nodes of the graph, and are nothing but aliases
+for the `begin` and `end` iterators of the underlying `map` structure. This
+allows the user to corrupt the `DependenceGraph` structure, which we hope they
+won't do.
+
+The type of the node iterators are `std::map<ValueType *, std::set<ValueType
+*>>::iterator` (aliased to `nodes_iterator`), thus in order to traverse the
+dependants of a single node, one needs to use `iterator->second.begin()` and
+`iterator->second.end()`. The type of these iterators is `std::set<ValueType
+*>::iterator` (aliased to `dependant_iterator`).
+
+### DDG.h and DDG.cpp
+
+(please update the documenting comments in `pass/include/DDG.h` and
+`pass/src/DDG.cpp` if you modify this section)
+
+The simplest use of the `DependenceGraph` class is in the implementation of the
+Data Dependence Graph (DDG) LLVM function pass, which builds the DDG of a
+function using the def-use chains of instructions. The header file `DDG.h`
+defines a trivial `FunctionPass` - `DataDependenceGraphPass`. The non-trivial
+parts of the definition are that it is storing an instance of
+`DependenceGraph<Instruction>` which can be accessed via a getter method and
+cleared via `releaseMemory()`, and the declaration inside `getAnalysisUsage()`
+that the pass doesn't modify the given `LLVM IR` in any way.
+
+The implementation of the pass is in the source file `DDG.cpp`. It includes some
+LLVM boilerplate (registering the pass), but the entry point is the
+`runOnFunction` method. It first loops over the instructions of a function and
+adds them to the internal (for the pass) `DependenceGraph` as nodes. Then it
+goes over the instructions again and adds all of their 'users' from their
+def-use chain as nodes dependant on the instructions in the `DependenceGraph`.
+
+This pass is useless on its own, as there is no way to extract its result. For
+this reason, we need to look at `DDGPrinter.h` and `DDGPrinter.cpp`.
+
 [ottoni2005]: (http://dl.acm.org/citation.cfm?id=1100543)
 [2011-dswp-prj]: (http://www.cs.cmu.edu/~fuyaoz/courses/15745/)
 [2013-dswp-prj]: (http://www.cs.cmu.edu/~avelingk/compilers/)

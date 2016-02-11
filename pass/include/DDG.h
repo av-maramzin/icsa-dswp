@@ -1,11 +1,21 @@
+/*******************************************************************************
+ *
+ * (please update README.md if you modify this comment).
+ *
+ * The simplest use of the `DependenceGraph` class is in the implementation of
+ * the Data Dependence Graph (DDG) LLVM function pass, which builds the DDG of
+ * a function using the def-use chains of instructions. This file defines a
+ * trivial `FunctionPass` - `DataDependenceGraphPass`. The non-trivial parts of
+ * the definition are that it is storing an instance of
+ * `DependenceGraph<Instruction>` which can be accessed via a getter method and
+ * cleared via `releaseMemory()`, and the declaration inside
+ * `getAnalysisUsage()` that the pass doesn't modify the given `LLVM IR` in any
+ * way.
+ *
+*******************************************************************************/
 #ifndef ICSA_DSWP_DDG_H
 #define ICSA_DSWP_DDG_H
 
-#include "llvm/Support/raw_ostream.h"
-using llvm::raw_ostream;
-
-#include "llvm/IR/Module.h"
-using llvm::Module;
 #include "llvm/IR/Function.h"
 using llvm::Function;
 #include "llvm/IR/Instruction.h"
@@ -34,21 +44,18 @@ public:
   // Entry point of `FunctionPass`.
   bool runOnFunction(Function &F) override;
 
-  // Get the dependence graph.
-  const DependenceGraph<Instruction> &getDDG() const { return DDG; }
-
   // Specifies passes this one depends on.
   void getAnalysisUsage(AnalysisUsage &Info) const override {
     Info.setPreservesAll();
   }
 
-  const char *getPassName() const override {
-    return "Data Dependence Graph";
-  }
+  const char *getPassName() const override { return "Data Dependence Graph"; }
 
   void releaseMemory() override { DDG.clear(); }
-};
 
+  // Get the dependence graph.
+  const DependenceGraph<Instruction> &getDDG() const { return DDG; }
+};
 }
 
 #endif
