@@ -26,8 +26,6 @@ using llvm::User;
 #include "llvm/Support/Casting.h"
 using llvm::dyn_cast;
 
-#include "Util.h"
-
 namespace icsa {
 
 char DataDependenceGraphPass::ID = 0;
@@ -35,8 +33,6 @@ RegisterPass<DataDependenceGraphPass>
     DDGRegister("ddg", "Build Data Dependence Graph");
 
 bool DataDependenceGraphPass::runOnFunction(Function &F) {
-  DDG.firstValue = F.getEntryBlock().begin();
-
   // Add nodes.
   for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
     const Instruction& Inst = *I;
@@ -47,7 +43,7 @@ bool DataDependenceGraphPass::runOnFunction(Function &F) {
   for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
     for (User *U : I->users()) {
       if (Instruction *Inst = dyn_cast<Instruction>(U)) {
-        DDG.addEdge(DDG.find(const_cast<Instruction*>(&*I)), DDG.find(Inst));
+        DDG.addEdge(const_cast<Instruction*>(&*I), Inst);
       }
     }
   }

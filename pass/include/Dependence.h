@@ -13,7 +13,6 @@ namespace icsa {
 
 template <typename VT> class DependenceGraph {
 protected:
-  typedef DependenceGraph<VT> DepGraph;
   map<VT *, set<VT *>> Nodes;
 
 public:
@@ -31,6 +30,11 @@ public:
       Node.second.erase(Value);
     }
     Nodes.erase(Value);
+  }
+
+  /// Remove all nodes from the graph.
+  void clear() {
+    Nodes.clear();
   }
 
   nodes_iterator begin() { return Nodes.begin(); }

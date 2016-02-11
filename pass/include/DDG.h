@@ -17,35 +17,27 @@ using llvm::FunctionPass;
 using llvm::AnalysisUsage;
 
 #include "Dependence.h"
-#include "InstDep.h"
+using icsa::DependenceGraph;
 
 namespace icsa {
-
-typedef InstructionDependenceNode DataDependenceNode;
-
-class DataDependenceGraph : public DependenceGraph<Instruction> {
-public:
-  const Function *getFunction() const {
-    return firstValue->getParent()->getParent();
-  }
-
-  friend class DataDependenceGraphPass;
-};
 
 // Designed after ControlDependenceGraphPass.
 class DataDependenceGraphPass : public FunctionPass {
 private:
-  DataDependenceGraph DDG;
+  DependenceGraph<Instruction> DDG;
 
 public:
   static char ID;
 
   DataDependenceGraphPass() : FunctionPass(ID) {}
 
+  // Entry point of `FunctionPass`.
   bool runOnFunction(Function &F) override;
 
-  const DataDependenceGraph &getDDG() const { return DDG; }
+  // Get the dependence graph.
+  const DependenceGraph<Instruction> &getDDG() const { return DDG; }
 
+  // Specifies passes this one depends on.
   void getAnalysisUsage(AnalysisUsage &Info) const override {
     Info.setPreservesAll();
   }
@@ -54,29 +46,9 @@ public:
     return "Data Dependence Graph";
   }
 
-  void releaseMemory() override { DDG.releaseMemory(); }
+  void releaseMemory() override { DDG.clear(); }
 };
 
-typedef DependenceBaseIterator<Instruction, DataDependenceNode> ddg_iterator;
-typedef DependenceBaseIterator<Instruction, const DataDependenceNode>
-    ddg_const_iterator;
-}
-
-// GraphTraits for DDG.
-
-#include "llvm/ADT/GraphTraits.h"
-
-#include "DependenceGraphTraits.h"
-
-namespace llvm {
-
-template <>
-struct GraphTraits<icsa::DataDependenceGraph *>
-    : public icsa::DGGraphTraits<Instruction> {};
-
-template <>
-struct GraphTraits<const icsa::DataDependenceGraph *>
-    : public icsa::ConstDGGraphTraits<Instruction> {};
 }
 
 #endif

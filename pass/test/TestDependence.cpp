@@ -4,8 +4,10 @@ using std::cout;
 #include <string>
 using std::string;
 
-#include "DependenceTraits.h"
+#include "Dependence.h"
 using icsa::DependenceGraph;
+
+#include "DependenceTraits.h"
 using icsa::DepGraphTraitsWrapper;
 using icsa::DepNodeTraitsWrapper;
 
