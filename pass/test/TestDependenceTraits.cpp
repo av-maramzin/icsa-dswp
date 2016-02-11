@@ -14,6 +14,31 @@ using icsa::DepNodeTraitsWrapper;
 #include "llvm/ADT/GraphTraits.h"
 using llvm::GraphTraits;
 
+#include <string>
+using std::to_string;
+
+namespace llvm {
+
+template <>
+struct DOTGraphTraits<DepGraphTraitsWrapper<int>>
+    : public DefaultDOTGraphTraits {
+  typedef DepGraphTraitsWrapper<int> GraphType;
+  typedef DepNodeTraitsWrapper<int> NodeType;
+
+  DOTGraphTraits(bool isSimple = false)
+      : DefaultDOTGraphTraits(isSimple){};
+
+  static string getGraphName(const GraphType &Graph) {
+    return "Test dependence graph";
+  }
+
+  string getNodeLabel(const NodeType *Node,
+                      const GraphType &Graph) {
+    return to_string(*Node->getValue());
+  }
+};
+}
+
 DependenceGraph<int> initGraph() {
   static int ints[] = {0, 1, 2, 3};
 

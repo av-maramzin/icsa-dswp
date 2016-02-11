@@ -95,11 +95,11 @@ is `std::map<ValueType*, std::set<ValueType *>>`.
 
 There is a common sense interface exposed by `DependenceGraph<ValueType>`,
 allowing users to add and remove nodes, add edges, check if a node depends on
-another one, and clear the graph. There are also `begin` and `end` iterators
-which allow the traversal of the nodes of the graph, and are nothing but aliases
-for the `begin` and `end` iterators of the underlying `map` structure. This
-allows the user to corrupt the `DependenceGraph` structure, which we hope they
-won't do.
+another one, and clear the graph. There are also `nodes_begin` and `nodes_end`
+iterators which allow the traversal of the nodes of the graph, and are nothing
+but aliases for the `begin` and `end` iterators of the underlying `map`
+structure. This allows the user to corrupt the `DependenceGraph` structure,
+which we hope they won't do.
 
 The type of the node iterators are `std::map<ValueType *, std::set<ValueType
 *>>::iterator` (aliased to `nodes_iterator`), thus in order to traverse the

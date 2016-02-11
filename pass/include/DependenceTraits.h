@@ -12,7 +12,6 @@ using std::set;
 #include <memory>
 using std::unique_ptr;
 
-
 #include <string>
 using std::string;
 
@@ -55,7 +54,8 @@ protected:
   const set<ValueType *> *Children;
 
 public:
-  DepNodeTraitsWrapper(DepGraphTraitsWrapper<ValueType> &Graph, const ValueType *Value, const set<ValueType *> *C)
+  DepNodeTraitsWrapper(DepGraphTraitsWrapper<ValueType> &Graph,
+                       const ValueType *Value, const set<ValueType *> *C)
       : G(Graph), TheValue(Value), Children(C) {}
 
   const ValueType *getValue() const { return TheValue; }
@@ -67,10 +67,14 @@ public:
 // Iterator for all Dependence nodes.
 template <typename ValueType>
 class NparasiteIterator
-    : public std::iterator<std::bidirectional_iterator_tag, DepNodeTraitsWrapper<ValueType> *, int,
-                           DepNodeTraitsWrapper<ValueType> *, DepNodeTraitsWrapper<ValueType> *> {
-  typedef std::iterator<std::bidirectional_iterator_tag, DepNodeTraitsWrapper<ValueType> *, int,
-                        DepNodeTraitsWrapper<ValueType> *, DepNodeTraitsWrapper<ValueType> *> super;
+    : public std::iterator<std::bidirectional_iterator_tag,
+                           DepNodeTraitsWrapper<ValueType> *, int,
+                           DepNodeTraitsWrapper<ValueType> *,
+                           DepNodeTraitsWrapper<ValueType> *> {
+  typedef std::iterator<std::bidirectional_iterator_tag,
+                        DepNodeTraitsWrapper<ValueType> *, int,
+                        DepNodeTraitsWrapper<ValueType> *,
+                        DepNodeTraitsWrapper<ValueType> *> super;
 
 public:
   typedef typename super::pointer pointer;
@@ -79,7 +83,8 @@ public:
   typedef DepNodeTraitsWrapper<ValueType> NodeType;
 
 private:
-  typedef typename map<ValueType *, unique_ptr<NodeType>>::const_iterator IndexType;
+  typedef
+      typename map<ValueType *, unique_ptr<NodeType>>::const_iterator IndexType;
   IndexType idx;
 
 public:
@@ -118,7 +123,6 @@ public:
   }
 };
 
-
 template <typename ValueType> class DepGraphTraitsWrapper {
 public:
   typedef DepNodeTraitsWrapper<ValueType> NodeType;
@@ -129,7 +133,7 @@ protected:
 
 public:
   DepGraphTraitsWrapper(const DependenceGraph<ValueType> &Graph) {
-    for (auto I = Graph.cbegin(), E = Graph.cend(); I != E; ++I) {
+    for (auto I = Graph.nodes_cbegin(), E = Graph.nodes_cend(); I != E; ++I) {
       Nodes[I->first] =
           unique_ptr<NodeType>(new NodeType(*this, I->first, &I->second));
     }
@@ -141,28 +145,31 @@ public:
   NodeType *operator[](ValueType *Value) { return Nodes[Value].get(); }
 
   void writeToFile(string Filename) {
-      errs() << "Writing '" << Filename << "'...";
+    errs() << "Writing '" << Filename << "'...";
 
-      error_code EC;
-      raw_fd_ostream File(Filename, EC, F_Text);
+    error_code EC;
+    raw_fd_ostream File(Filename, EC, F_Text);
 
-      if (!EC) {
-        WriteGraph(File, *this);
-      } else {
-        errs() << "  error opening file for writing!";
-      }
-      errs() << "\n";
+    if (!EC) {
+      WriteGraph(File, *this);
+    } else {
+      errs() << "  error opening file for writing!";
+    }
+    errs() << "\n";
   }
 };
-
 
 // Iterator for all Dependence nodes.
 template <typename ValueType>
 class NparasiteChildIterator
-    : public std::iterator<std::bidirectional_iterator_tag, DepNodeTraitsWrapper<ValueType> *, int,
-                           DepNodeTraitsWrapper<ValueType> *, DepNodeTraitsWrapper<ValueType> *> {
-  typedef std::iterator<std::bidirectional_iterator_tag, DepNodeTraitsWrapper<ValueType> *, int,
-                        DepNodeTraitsWrapper<ValueType> *, DepNodeTraitsWrapper<ValueType> *> super;
+    : public std::iterator<std::bidirectional_iterator_tag,
+                           DepNodeTraitsWrapper<ValueType> *, int,
+                           DepNodeTraitsWrapper<ValueType> *,
+                           DepNodeTraitsWrapper<ValueType> *> {
+  typedef std::iterator<std::bidirectional_iterator_tag,
+                        DepNodeTraitsWrapper<ValueType> *, int,
+                        DepNodeTraitsWrapper<ValueType> *,
+                        DepNodeTraitsWrapper<ValueType> *> super;
 
 public:
   typedef typename super::pointer pointer;
@@ -221,20 +228,22 @@ namespace llvm {
 using icsa::DepGraphTraitsWrapper;
 using icsa::DepNodeTraitsWrapper;
 
-template <typename ValueType> class GraphTraits<DepGraphTraitsWrapper<ValueType>> {
+template <typename ValueType>
+class GraphTraits<DepGraphTraitsWrapper<ValueType>> {
 public:
   typedef DepGraphTraitsWrapper<ValueType> GraphType;
   typedef DepNodeTraitsWrapper<ValueType> NodeType;
 
   typedef typename GraphType::nodes_iterator nodes_iterator;
-  static nodes_iterator nodes_begin(const GraphType &G) { return G.nodes_begin(); }
+  static nodes_iterator nodes_begin(const GraphType &G) {
+    return G.nodes_begin();
+  }
   static nodes_iterator nodes_end(const GraphType &G) { return G.nodes_end(); }
 
   typedef typename NodeType::child_iterator ChildIteratorType;
   static ChildIteratorType child_begin(NodeType *N) { return N->child_begin(); }
   static ChildIteratorType child_end(NodeType *N) { return N->child_end(); }
 };
-
 }
 
 #endif

@@ -40,11 +40,11 @@ public:
   /// Remove all nodes from the graph.
   void clear() { Nodes.clear(); }
 
-  nodes_iterator begin() { return Nodes.begin(); }
-  const_nodes_iterator cbegin() const { return Nodes.cbegin(); }
+  nodes_iterator nodes_begin() { return Nodes.begin(); }
+  const_nodes_iterator nodes_cbegin() const { return Nodes.cbegin(); }
 
-  nodes_iterator end() { return Nodes.end(); }
-  const_nodes_iterator cend() const { return Nodes.cend(); }
+  nodes_iterator nodes_end() { return Nodes.end(); }
+  const_nodes_iterator nodes_cend() const { return Nodes.cend(); }
 };
 }
 
