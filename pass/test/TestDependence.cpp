@@ -4,10 +4,10 @@ using std::cout;
 #include <string>
 using std::string;
 
-#include "NewDep.h"
+#include "DependenceTraits.h"
 using icsa::DependenceGraph;
-using icsa::Gparasite;
-using icsa::Nparasite;
+using icsa::DepGraphTraitsWrapper;
+using icsa::DepNodeTraitsWrapper;
 
 #include "llvm/ADT/GraphTraits.h"
 using llvm::GraphTraits;
@@ -23,7 +23,6 @@ using std::error_code;
 
 #include "llvm/Support/GraphWriter.h"
 using llvm::WriteGraph;
-
 
 DependenceGraph<int> initGraph() {
   static int ints[] = {0, 1, 2, 3};
@@ -54,28 +53,36 @@ void printGraph(const DependenceGraph<int> &G) {
   }
 }
 
-int main() {
-  DependenceGraph<int> G = initGraph();
-  printGraph(G);
-
-  typedef GraphTraits<Gparasite<int>> GPTraits;
-
-  Gparasite<int> GP(G);
+void printGraphUsingTraits(const DependenceGraph<int> &G) {
+  typedef GraphTraits<DepGraphTraitsWrapper<int>> GPTraits;
+  DepGraphTraitsWrapper<int> GP(G);
   for (GPTraits::nodes_iterator I = GPTraits::nodes_begin(GP),
                                 E = GPTraits::nodes_end(GP);
        I != E; ++I) {
-    Nparasite<int> *N = *I;
+    DepNodeTraitsWrapper<int> *N = *I;
     cout << *N->getValue() << ":";
     for (GPTraits::ChildIteratorType J = GPTraits::child_begin(N),
                                      F = GPTraits::child_end(N);
          J != F; ++J) {
-      Nparasite<int> *M = *J;
+      DepNodeTraitsWrapper<int> *M = *J;
       cout << " " << *M->getValue();
     }
     cout << '\n';
   }
+}
 
-  GP.writeToFile();
+void writeGraphUsingTraits(const DependenceGraph<int> &G) {
+  DepGraphTraitsWrapper<int>(G).writeToFile("test.dot");
+}
+
+int main() {
+  DependenceGraph<int> G = initGraph();
+
+  printGraph(G);
+
+  printGraphUsingTraits(G);
+
+  writeGraphUsingTraits(G);
 
   return 0;
 }

@@ -1,5 +1,8 @@
-#ifndef TMP
-#define TMP
+#ifndef ICSA_DSWP_DEPENDENCE_TRAITS_H
+#define ICSA_DSWP_DEPENDENCE_TRAITS_H
+
+#include "Dependence.h"
+using icsa::DependenceGraph;
 
 #include <map>
 using std::map;
@@ -30,35 +33,6 @@ using llvm::WriteGraph;
 
 namespace icsa {
 
-template <typename VT> class DependenceGraph {
-protected:
-  typedef DependenceGraph<VT> DepGraph;
-  map<VT *, set<VT *>> Nodes;
-
-public:
-  typedef typename map<VT *, set<VT *>>::iterator nodes_iterator;
-  typedef typename map<VT *, set<VT *>>::const_iterator const_nodes_iterator;
-
-  void addNode(VT *Value) { Nodes[Value]; }
-
-  void addEdge(VT *From, VT *To) { Nodes[From].insert(To); }
-
-  /// Makes sure there are no edges pointing to `Value` and then removes it
-  /// from `Nodes`.
-  void removeNode(VT *Value) {
-    for (auto &Node : Nodes) {
-      Node.second.erase(Value);
-    }
-    Nodes.erase(Value);
-  }
-
-  nodes_iterator begin() { return Nodes.begin(); }
-  const_nodes_iterator cbegin() const { return Nodes.cbegin(); }
-
-  nodes_iterator end() { return Nodes.end(); }
-  const_nodes_iterator cend() const { return Nodes.cend(); }
-};
-
 /* child-iterator:
  *  - dereferenced to 'node-type'
  *  - constructed from 'node-type'
@@ -69,19 +43,19 @@ public:
  */
 
 template <typename VT> class NparasiteChildIterator;
-template <typename VT> class Gparasite;
+template <typename VT> class DepGraphTraitsWrapper;
 
-template <typename VT> class Nparasite {
+template <typename VT> class DepNodeTraitsWrapper {
 public:
   typedef NparasiteChildIterator<VT> child_iterator;
 
 protected:
-  Gparasite<VT> &G;
+  DepGraphTraitsWrapper<VT> &G;
   const VT *TheValue;
   const set<VT *> *Children;
 
 public:
-  Nparasite(Gparasite<VT> &Graph, const VT *Value, const set<VT *> *C)
+  DepNodeTraitsWrapper(DepGraphTraitsWrapper<VT> &Graph, const VT *Value, const set<VT *> *C)
       : G(Graph), TheValue(Value), Children(C) {}
 
   const VT *getValue() const { return TheValue; }
@@ -93,16 +67,16 @@ public:
 // Iterator for all Dependence nodes.
 template <typename VT>
 class NparasiteIterator
-    : public std::iterator<std::bidirectional_iterator_tag, Nparasite<VT> *, int,
-                           Nparasite<VT> *, Nparasite<VT> *> {
-  typedef std::iterator<std::bidirectional_iterator_tag, Nparasite<VT> *, int,
-                        Nparasite<VT> *, Nparasite<VT> *> super;
+    : public std::iterator<std::bidirectional_iterator_tag, DepNodeTraitsWrapper<VT> *, int,
+                           DepNodeTraitsWrapper<VT> *, DepNodeTraitsWrapper<VT> *> {
+  typedef std::iterator<std::bidirectional_iterator_tag, DepNodeTraitsWrapper<VT> *, int,
+                        DepNodeTraitsWrapper<VT> *, DepNodeTraitsWrapper<VT> *> super;
 
 public:
   typedef typename super::pointer pointer;
   typedef typename super::reference reference;
 
-  typedef Nparasite<VT> NodeType;
+  typedef DepNodeTraitsWrapper<VT> NodeType;
 
 private:
   typedef typename map<VT *, unique_ptr<NodeType>>::const_iterator IndexType;
@@ -145,16 +119,16 @@ public:
 };
 
 
-template <typename VT> class Gparasite {
+template <typename VT> class DepGraphTraitsWrapper {
 public:
-  typedef Nparasite<VT> NodeType;
+  typedef DepNodeTraitsWrapper<VT> NodeType;
   typedef NparasiteIterator<VT> nodes_iterator;
 
 protected:
   map<VT *, unique_ptr<NodeType>> Nodes;
 
 public:
-  Gparasite(const DependenceGraph<VT> &Graph) {
+  DepGraphTraitsWrapper(const DependenceGraph<VT> &Graph) {
     for (auto I = Graph.cbegin(), E = Graph.cend(); I != E; ++I) {
       Nodes[I->first] =
           unique_ptr<NodeType>(new NodeType(*this, I->first, &I->second));
@@ -166,8 +140,7 @@ public:
 
   NodeType *operator[](VT *Value) { return Nodes[Value].get(); }
 
-  void writeToFile() {
-      string Filename = "test.dot";
+  void writeToFile(string Filename) {
       errs() << "Writing '" << Filename << "'...";
 
       error_code EC;
@@ -186,17 +159,17 @@ public:
 // Iterator for all Dependence nodes.
 template <typename VT>
 class NparasiteChildIterator
-    : public std::iterator<std::bidirectional_iterator_tag, Nparasite<VT> *, int,
-                           Nparasite<VT> *, Nparasite<VT> *> {
-  typedef std::iterator<std::bidirectional_iterator_tag, Nparasite<VT> *, int,
-                        Nparasite<VT> *, Nparasite<VT> *> super;
+    : public std::iterator<std::bidirectional_iterator_tag, DepNodeTraitsWrapper<VT> *, int,
+                           DepNodeTraitsWrapper<VT> *, DepNodeTraitsWrapper<VT> *> {
+  typedef std::iterator<std::bidirectional_iterator_tag, DepNodeTraitsWrapper<VT> *, int,
+                        DepNodeTraitsWrapper<VT> *, DepNodeTraitsWrapper<VT> *> super;
 
 public:
   typedef typename super::pointer pointer;
   typedef typename super::reference reference;
 
-  typedef Gparasite<VT> GraphType;
-  typedef Nparasite<VT> NodeType;
+  typedef DepGraphTraitsWrapper<VT> GraphType;
+  typedef DepNodeTraitsWrapper<VT> NodeType;
 
 private:
   typedef typename set<VT *>::iterator IndexType;
@@ -245,13 +218,13 @@ public:
 #include "llvm/ADT/GraphTraits.h"
 
 namespace llvm {
-using icsa::Gparasite;
-using icsa::Nparasite;
+using icsa::DepGraphTraitsWrapper;
+using icsa::DepNodeTraitsWrapper;
 
-template <typename VT> class GraphTraits<Gparasite<VT>> {
+template <typename VT> class GraphTraits<DepGraphTraitsWrapper<VT>> {
 public:
-  typedef Gparasite<VT> GraphType;
-  typedef Nparasite<VT> NodeType;
+  typedef DepGraphTraitsWrapper<VT> GraphType;
+  typedef DepNodeTraitsWrapper<VT> NodeType;
 
   typedef typename GraphType::nodes_iterator nodes_iterator;
   static nodes_iterator nodes_begin(const GraphType &G) { return G.nodes_begin(); }
