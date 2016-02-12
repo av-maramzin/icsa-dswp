@@ -131,7 +131,83 @@ In order to test this pass, build the project and execute `tools/test-ddg.sh`
 with a test `cpp` file as a command line argument.
 
 This pass is useless on its own, as there is no way to extract its result. For
-this reason, we need to look at `DDGPrinter.h` and `DDGPrinter.cpp`.
+this reason, we need to look at `DDGPrinter.cpp`.
+
+### DDGPrinter.cpp and GraphTraits
+
+The DDG of a function can be printed using the `DDGPrinter` pass, defined in
+`DDGPrinter.cpp`. It depends on the `DataDependenceGraphPass` as specified in
+`getAnalysisUsage` and it uses the `DepGraphTraitsWrapper` class defined in
+`DependenceTraits.h` in order to print the graph using the LLVM `GraphWriter`
+class. Also, `InstDOTTraits.h` is included as it defines `DOTGraphTraits` for
+`DependenceGraph<Instruction>`, which is used by `GraphWriter` to decide how to
+label the nodes of the graph. This is specified in the `getNodeLabel` method of
+`DOTGraphTraits` and it just prints the instruction as text.
+
+It is worth discussing the structure of the classes defined in
+`DependenceTraits.h`. In order to define LLVM's `GraphTraits` for a graph
+structure, it needs to be represented by separate classes - one for the graph
+and one for nodes in the graph. However, we decided to implement the graph as a
+single class, as described in the `Dependence.h` section. For this reason, we
+had to implement wrappers around it in order to comply with the requirements of
+`GraphTraits`.
+
+When specializing `GraphTraits` for a graph type, the following elements need to
+be defined:
+
+ * `NodeType` - the class that represents a node of the graph;
+ * `nodes_iterator` - an iterator that is constructed from a constant reference
+   to a graph object and dereferences to a pointer to a node object;
+ * `nodes_begin` and `nodes_end` - methods that construct the begin and end
+   `nodes_iterator`s given a constant reference to a graph object;
+ * `ChildIteratorType` - an iterator that is constructed from a pointer to a
+   node object and is dereferenced to a pointer to a node object;
+ * `child_begin` and `child_end` - methods that construct the begin and end
+   `ChildIteratorType`s given a pointer to a node object.
+
+This is done in the `GraphTraits<DepGraphTraitsWrapper<ValueType>>` class
+defined in `DependenceTraits.h`.
+
+The `DepGraphTraitsWrapper` class that `GraphTraits` is being specialized for,
+needs to be constructed out of a `DependenceGraph` object. The constructor
+allocates a `DepNodeTraitsWrapper` for every node in the given
+`DependenceGraph` and stores a `std::map` from `ValueType *`s to these new
+`DepNodeTraitsWrapper`s. Let's call the node type `Node` and the graph type
+`Graph` for the sake of discussion. `Node` stores a reference to the `Graph`
+that contains it, a constant `ValueType *` to the node it represents, and a
+const pointer to `std::set<ValueType *>` - the set of the nodes that depend on
+it. In this way, `Node` doesn't own any of the objects it references, but is
+simply a proxy used to plug into the `GraphTraits` mechanism.
+
+There are two more types defined in `DependenceTraits.h`: `DepNodeIterator` and
+`DepNodeChildIterator`. These are the required `nodes_iterator` and
+`ChildIteratorType` required by `GraphTraits`. The interesting functions in the
+implementation are the constructors and the dereferencing operators
+(`operator*`).
+
+`DepNodeIterator` is constructed from a `const_iterator` of the map
+specialization used by `Graph`, which dereferences to a `std::pair<ValueType *,
+std::unique_ptr<Node>>` and thus the `DepNodeIterator` is dereferenced by taking
+the second element of that pair and extracting the pointer that it manages.
+Explicitly, this looks like `idx->second.get()`, where `idx` is the previously
+mentioned `const_iterator`.
+
+`DepNodeChildIterator` is constructed from an `iterator` of the set that is the
+`value_type` of the map used in `DependenceGraph`, namely `std::set<ValueType
+*>`. A reference to a `DepGraphTraitsWrapper` is also provided during
+construction of the `DepNodeChildIterator`, as in order to dereference this
+iterator to a `Node`, the `Graph` storing that `Node` needs to be known. This is
+also the reason `Node`s store a reference to their containing `Graph` - in order
+to pass it to the constructor of their child iterators. This iterator is
+dereferenced by first dereferencing the stored set iterator and then using the
+value to extract the `Node` that the `Graph` associates with this value. Namely,
+`G[*idx]`, where `idx` is the previously mentioned `iterator` and `G` is an
+instance of `Graph`.
+
+All of this comes together when invoking `llvm::WriteGraph` in the method
+`writeToFile` in the `Graph` class definition. By using the specialization of
+`GraphTraits` `llvm::WriteGraph` knows how to traverse our custom graph and
+write it to a file in the `.dot` format.
 
 [ottoni2005]: (http://dl.acm.org/citation.cfm?id=1100543)
 [2011-dswp-prj]: (http://www.cs.cmu.edu/~fuyaoz/courses/15745/)
