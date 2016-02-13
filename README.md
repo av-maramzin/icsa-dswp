@@ -209,6 +209,36 @@ All of this comes together when invoking `llvm::WriteGraph` in the method
 `GraphTraits` `llvm::WriteGraph` knows how to traverse our custom graph and
 write it to a file in the `.dot` format.
 
+The `DDGPrinter` can be tested by running the `tools/test-dot-ddg.sh` script and
+inspecting the generated output. A `.dot` file can be converted to a PDF using
+the `dot` tool:
+
+```
+dot -Tpdf foo.dot -o foo.pdf
+```
+
+# MDG.h and MDG.cpp
+
+Once we have the pipeline set up for one dependence graph, it is easy to
+replicate the code for others. The `MemoryDependenceGraphPass` that we
+implement, is just a wrapper for LLVM's `MemoryDependenceAnalysis`. In `MDG.h`
+we define the pass, which like the one in `DDG.h` stores a dependence graph on
+instructions. In `getAnalysisUsage` we specify that the pass doesn't modify the
+IR structure and that it depends on `MemoryDependenceAnalysis`. The dependence
+graph can be accessed via the `getMDG` method and cleared via `releaseMemory`.
+
+In `MDG.cpp` we traverse the function that the pass is being ran on, and we add
+all of its instructions to the dependence graph. Then we consider only 'def'
+dependencies from `MemoryDependenceAnalysis` and we add them to the graph also.
+We should consider the other type of dependencies too, but since some of them
+are not 'must'-dependencies, we ignore them for now.
+
+The `MDGPrinter.cpp` implements a printing pass, almost identical to
+`DDGPrinter.cpp`. In order to test the `MemoryDependenceGraph`, you can use
+`tools/test-dot-mdg.sh`, similarly to `tools/test-dot-ddg.sh`. There is also
+`tools/test-mdg.sh` which just tests the memory dependence graph pass, without
+printing it.
+
 [ottoni2005]: (http://dl.acm.org/citation.cfm?id=1100543)
 [2011-dswp-prj]: (http://www.cs.cmu.edu/~fuyaoz/courses/15745/)
 [2013-dswp-prj]: (http://www.cs.cmu.edu/~avelingk/compilers/)
