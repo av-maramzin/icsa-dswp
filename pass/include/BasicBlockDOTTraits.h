@@ -1,13 +1,13 @@
-#ifndef ICSA_DSWP_INST_DOT_TRAITS_H
-#define ICSA_DSWP_INST_DOT_TRAITS_H
+#ifndef ICSA_DSWP_BASIC_BLOCK_DOT_TRAITS_H
+#define ICSA_DSWP_BASIC_BLOCK_DOT_TRAITS_H
 
 #include <string>
 using std::string;
 #include <sstream>
 using std::stringstream;
 
-#include "llvm/IR/Instruction.h"
-using llvm::Instruction;
+#include "llvm/IR/BasicBlock.h"
+using llvm::BasicBlock;
 
 #include "llvm/Support/raw_os_ostream.h"
 using llvm::raw_os_ostream;
@@ -22,15 +22,15 @@ using icsa::DepGraphTraitsWrapper;
 using icsa::DepNodeTraitsWrapper;
 
 #include "Util.h"
-using icsa::instructionToFunctionName;
+using icsa::basicBlockToFunctionName;
 
 namespace llvm {
 
 template <>
-struct DOTGraphTraits<DepGraphTraitsWrapper<Instruction>>
+struct DOTGraphTraits<DepGraphTraitsWrapper<BasicBlock>>
     : public DefaultDOTGraphTraits {
-  typedef DepGraphTraitsWrapper<Instruction> GraphType;
-  typedef DepNodeTraitsWrapper<Instruction> NodeType;
+  typedef DepGraphTraitsWrapper<BasicBlock> GraphType;
+  typedef DepNodeTraitsWrapper<BasicBlock> NodeType;
 
   typedef DOTGraphTraits<const Function *> func_traits;
   func_traits FT;
@@ -40,18 +40,13 @@ struct DOTGraphTraits<DepGraphTraitsWrapper<Instruction>>
 
   static string getGraphName(const GraphType &Graph) {
     string FuncName =
-        instructionToFunctionName(*Graph.nodes_begin()->getValue());
+        basicBlockToFunctionName(*Graph.nodes_begin()->getValue());
     return "Dependence graph for '" + FuncName + "' function";
   }
 
-  string getNodeLabel(const DepNodeTraitsWrapper<Instruction> *Node,
-                      const DepGraphTraitsWrapper<Instruction> &Graph) {
-    stringstream ss;
-    raw_os_ostream roos(ss);
-
-    Node->getValue()->print(roos);
-
-    return ss.str();
+  string getNodeLabel(const DepNodeTraitsWrapper<BasicBlock> *Node,
+                      const DepGraphTraitsWrapper<BasicBlock> &Graph) {
+    return FT.getNodeLabel(Node->getValue(), Node->getValue()->getParent());
   }
 };
 }

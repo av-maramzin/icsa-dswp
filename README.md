@@ -127,8 +127,8 @@ adds them to the internal (for the pass) `DependenceGraph` as nodes. Then it
 goes over the instructions again and adds all of their 'users' from their
 def-use chain as nodes dependant on the instructions in the `DependenceGraph`.
 
-In order to test this pass, build the project and execute `tools/test-ddg.sh`
-with a test `cpp` file as a command line argument.
+In order to test this pass, build the project and execute `tools/test-pass.sh`
+with `-ddg` and a test `cpp` file as command line arguments.
 
 This pass is useless on its own, as there is no way to extract its result. For
 this reason, we need to look at `DDGPrinter.cpp`.
@@ -209,9 +209,10 @@ All of this comes together when invoking `llvm::WriteGraph` in the method
 `GraphTraits` `llvm::WriteGraph` knows how to traverse our custom graph and
 write it to a file in the `.dot` format.
 
-The `DDGPrinter` can be tested by running the `tools/test-dot-ddg.sh` script and
-inspecting the generated output. A `.dot` file can be converted to a PDF using
-the `dot` tool:
+In order to test this pass, build the project and execute . The `DDGPrinter`
+can be tested by running `tools/test-pass.sh` with `-dot-ddg` and a test `cpp`
+file as command line arguments and inspecting the generated output. A `.dot`
+file can be converted to a PDF using the `dot` tool:
 
 ```
 dot -Tpdf foo.dot -o foo.pdf
@@ -235,9 +236,13 @@ are not 'must'-dependencies, we ignore them for now.
 
 The `MDGPrinter.cpp` implements a printing pass, almost identical to
 `DDGPrinter.cpp`. In order to test the `MemoryDependenceGraph`, you can use
-`tools/test-dot-mdg.sh`, similarly to `tools/test-dot-ddg.sh`. There is also
-`tools/test-mdg.sh` which just tests the memory dependence graph pass, without
-printing it.
+`tools/test-pass.sh`, similarly to the test for the `DataDependenceGraph`. The
+first argument can be either `-mdg` or `-dot-mdg`. Where the former just tests
+the memory dependence graph pass, without printing it.
+
+# CDG.h and CDG.cpp
+
+
 
 [ottoni2005]: (http://dl.acm.org/citation.cfm?id=1100543)
 [2011-dswp-prj]: (http://www.cs.cmu.edu/~fuyaoz/courses/15745/)
