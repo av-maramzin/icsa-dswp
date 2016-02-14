@@ -242,7 +242,48 @@ the memory dependence graph pass, without printing it.
 
 # CDG.h and CDG.cpp
 
+Similarly to `MDG.h` and `DDG.h`, `CDG.h` defines a simple pass that stores a
+dependence graph and provides ways to access it and clear it. This dependence
+graph, however, is on basic blocks, rather than instructions. The pass depends
+on the `PostDominatorTree` analysis pass, since that is used to construct the
+control dependence graph, as per [Cytron '89][cytron1989].
 
+The construction algorithm is implemented in `CDG.cpp` and the method
+`runOnFunction` of the new pass. It starts with building a bottom-up traversal
+stack of the post-dominator tree of the current function. It uses that to build
+the post-dominator frontier for each of the nodes in the control-flow graph.
+The reverse of that map (from basic blocks to their post-dominator frontier) is
+the map from basic blocks to the ones that have a control dependence on these
+basic blocks.
+
+There is a standard printer class `CDGPriner` in the corresponding `.cpp` file.
+`DOTGraphTraits` had to be specialized for `BasicBlocks` in order for this to
+work. This specialization piggy-backs on the default function traits
+implemented in LLVM, in order to pretty-print the list of instruction of the
+basic block as labels in the resulting graph.
+
+These passes can be tested using `tools/test-pass.sh` and `-cdg` or `-dot-cdg`
+as first parameters.
+
+# PDG.h and PDG.cpp
+
+The header file `PDG.h` defines yet another dependence graph on instructions.
+However, this one combines all of the previous three - CDG, DDG, and MDG - into
+a program dependence graph. A dependence on the other three passes is expressed
+in `getAnalysisUsage`.
+
+The construction of the program dependence graph is implemented in `PDG.cpp`. It
+copies the dependences from the data and memory dependence graphs. The ones in
+the control dependence graph, however, are on basic blocks rather than
+instructions. In order to convert them, all the instructions of the dependant
+basic block are made to depend on the last instruction of the parent basic
+block. That instruction is always a conditional branch, if there is a control
+depdence. Additionally, extra dependences are added from the branch instruction
+of basic blocks to phi nodes that have constants as in-values from these basic
+blocks. This is done to reflect the fact that if a phi node has a constant as an
+in-value that is equivalent to defining the initial value for a variable in that
+in-block. Finally, jump instructions that don't have any outgoing dependences
+are removed do declutter the graph.
 
 [ottoni2005]: (http://dl.acm.org/citation.cfm?id=1100543)
 [2011-dswp-prj]: (http://www.cs.cmu.edu/~fuyaoz/courses/15745/)

@@ -59,12 +59,12 @@ stack<DomTreeNode *> getBottomUpTraversal(const PostDominatorTree &pdt) {
   return result;
 }
 
-bool ControlDependenceGraphPass::runOnFunction(Function &F) {
-  PostDominatorTree &pdt = Pass::getAnalysis<PostDominatorTree>();
-
-  stack<DomTreeNode *> bottom_up_traversal = getBottomUpTraversal(pdt);
-
-  map<BasicBlock *, set<BasicBlock *>> post_dom_frontier;
+// Get the post-dominator frontier given a post-dominator tree and a bottom-up
+// traversal for it.
+map<BasicBlock *, set<BasicBlock *>>
+getPostDomFrontier(const PostDominatorTree &pdt,
+                   stack<DomTreeNode *> &&bottom_up_traversal) {
+  map<BasicBlock *, set<BasicBlock *>> result;
 
   while (!bottom_up_traversal.empty()) {
     DomTreeNode *current = bottom_up_traversal.top();
@@ -72,11 +72,9 @@ bool ControlDependenceGraphPass::runOnFunction(Function &F) {
     bottom_up_traversal.pop();
 
     BasicBlock *currentBB = current->getBlock();
-    CDG.addNode(currentBB);
 
-    // TODO(Stan): skip post_dom_frontier and directly build CDG
     // Construct an empty frontier set for `currentBB`.
-    post_dom_frontier[currentBB];
+    result[currentBB];
 
     // For each predecessor of `currentBB` in the CFG.
     for (pred_iterator it = pred_begin(currentBB); it != pred_end(currentBB);
@@ -84,7 +82,7 @@ bool ControlDependenceGraphPass::runOnFunction(Function &F) {
       // If it is not immediately post-dominated by `currentBB`, then it is in
       // the post-dominance frontier of `currentBB`.
       if (pdt.getNode(*it)->getIDom() != current) {
-        post_dom_frontier[currentBB].insert(*it);
+        result[currentBB].insert(*it);
       }
     }
 
@@ -93,17 +91,32 @@ bool ControlDependenceGraphPass::runOnFunction(Function &F) {
     for (DomTreeNode::iterator it = current->begin(); it != current->end();
          ++it) {
       BasicBlock *childBlock = (*it)->getBlock(); // Z in the algorithm.
-      // For each block in the post_dom_frontier of the 'child' node.
-      for (BasicBlock *bb : post_dom_frontier[childBlock]) {
+      // For each block in the result of the 'child' node.
+      for (BasicBlock *bb : result[childBlock]) {
         // Same as before.
         if (pdt.getNode(bb)->getIDom() != current) {
-          post_dom_frontier[currentBB].insert(bb);
+          result[currentBB].insert(bb);
         }
       }
     }
   }
 
+  return result;
+}
+
+bool ControlDependenceGraphPass::runOnFunction(Function &F) {
+  const PostDominatorTree &pdt = Pass::getAnalysis<PostDominatorTree>();
+
+  stack<DomTreeNode *> bottom_up_traversal = getBottomUpTraversal(pdt);
+
+  map<BasicBlock *, set<BasicBlock *>> post_dom_frontier =
+      getPostDomFrontier(pdt, std::move(bottom_up_traversal));
+
   // Reverse the post_dom_frontier map and store as a graph.
+  for (auto &kv : post_dom_frontier) {
+    BasicBlock *node = kv.first;
+    CDG.addNode(node);
+  }
   for (auto &kv : post_dom_frontier) {
     BasicBlock *to = kv.first;
     for (BasicBlock *from : kv.second) {
