@@ -60,16 +60,16 @@ bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
 
   // Copy the DDG edges to the PDG.
   for (auto I = ddg.nodes_cbegin(), E = ddg.nodes_cend(); I != E; ++I) {
-    Instruction *source = I->first;
-    for (Instruction *target : I->second) {
+    const Instruction *source = I->first;
+    for (const Instruction *target : I->second) {
       PDG.addEdge(source, target);
     }
   }
 
   // Copy the MDG edges to the PDG>
   for (auto I = mdg.nodes_cbegin(), E = mdg.nodes_cend(); I != E; ++I) {
-    Instruction *source = I->first;
-    for (Instruction *target : I->second) {
+    const Instruction *source = I->first;
+    for (const Instruction *target : I->second) {
       PDG.addEdge(source, target);
     }
   }
@@ -78,9 +78,9 @@ bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
   // instruction of the source basic block to the each instruction in the
   // target basic block.
   for (auto I = cdg.nodes_cbegin(), E = cdg.nodes_cend(); I != E; ++I) {
-    Instruction &source = I->first->back();
-    for (BasicBlock *BB : I->second) {
-      for (BasicBlock::iterator it = BB->begin(); it != BB->end(); ++it) {
+    const Instruction &source = I->first->back();
+    for (const BasicBlock *BB : I->second) {
+      for (BasicBlock::const_iterator it = BB->begin(); it != BB->end(); ++it) {
         PDG.addEdge(&source, &*it);
       }
     }
@@ -90,8 +90,8 @@ bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
   // last instruction of the BB that is associated with the constant value in
   // the phi node and they end in the phi node.
   for (auto I = ddg.nodes_cbegin(), E = ddg.nodes_cend(); I != E; ++I) {
-    Instruction *target = I->first;
-    if (PHINode *PN = dyn_cast<PHINode>(target)) {
+    const Instruction *target = I->first;
+    if (const PHINode *PN = dyn_cast<PHINode>(target)) {
       int nVals = PN->getNumIncomingValues();
       for (int i = 0; i < nVals; ++i) {
         if (dyn_cast<Constant>(PN->getIncomingValue(i))) {
@@ -103,9 +103,9 @@ bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
   }
 
   // Trim leaf jump instructions
-  vector<Instruction *> removeNodes;
+  vector<const Instruction *> removeNodes;
   for (auto I = PDG.nodes_cbegin(), E = PDG.nodes_cend(); I != E; ++I) {
-    BranchInst *BI = dyn_cast<BranchInst>(I->first);
+    const BranchInst *BI = dyn_cast<BranchInst>(I->first);
     if (BI != nullptr && BI->isUnconditional() && I->second.size() == 0) {
       removeNodes.push_back(I->first);
     }

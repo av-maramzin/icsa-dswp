@@ -1,5 +1,8 @@
-#ifndef ICSA_DSWP_PDG_H
-#define ICSA_DSWP_PDG_H
+#ifndef ICSA_DSWP_PSG_H
+#define ICSA_DSWP_PSG_H
+
+#include <set>
+using std::set;
 
 #include "llvm/IR/Function.h"
 using llvm::Function;
@@ -14,24 +17,22 @@ using llvm::AnalysisUsage;
 #include "Dependence.h"
 using icsa::DependenceGraph;
 
-#include "CDG.h"
-using icsa::ControlDependenceGraphPass;
-#include "MDG.h"
-using icsa::MemoryDependenceGraphPass;
-#include "DDG.h"
-using icsa::DataDependenceGraphPass;
+#include "PDG.h"
+using icsa::ProgramDependenceGraphPass;
 
 namespace icsa {
 
 // Designed after ControlDependenceGraphPass.
-class ProgramDependenceGraphPass : public FunctionPass {
+class PDGSCCGraphPass : public FunctionPass {
 private:
-  DependenceGraph<Instruction> PDG;
+  DependenceGraph<set<const Instruction *>> PSG;
+  // Keeps track of the memory that needs to be cleaned.
+  map<const Instruction *, set<const Instruction *>> SCCs;
 
 public:
   static char ID;
 
-  ProgramDependenceGraphPass() : FunctionPass(ID) {}
+  PDGSCCGraphPass() : FunctionPass(ID) {}
 
   // Entry point of `FunctionPass`.
   bool runOnFunction(Function &F) override;
@@ -39,19 +40,22 @@ public:
   // Specifies passes this one depends on.
   void getAnalysisUsage(AnalysisUsage &Info) const override {
     Info.setPreservesAll();
-    Info.addRequired<ControlDependenceGraphPass>();
-    Info.addRequired<MemoryDependenceGraphPass>();
-    Info.addRequired<DataDependenceGraphPass>();
+    Info.addRequired<ProgramDependenceGraphPass>();
   }
 
   const char *getPassName() const override {
-    return "Program Dependence Graph";
+    return "PDG Strongly Connected Components Graph";
   }
 
-  void releaseMemory() override { PDG.clear(); }
+  void releaseMemory() override {
+    PSG.clear();
+    SCCs.clear();
+  }
 
   // Get the dependence graph.
-  const DependenceGraph<Instruction> &getPDG() const { return PDG; }
+  const DependenceGraph<set<const Instruction *>> &getPSG() const {
+    return PSG;
+  }
 };
 }
 

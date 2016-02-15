@@ -27,5 +27,4 @@ string basicBlockToFunctionName(const BasicBlock &BB) {
   }
   return FuncName;
 }
-
 }

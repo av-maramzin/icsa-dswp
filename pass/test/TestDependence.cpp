@@ -27,7 +27,7 @@ DependenceGraph<int> initGraph() {
 }
 
 void printGraph(const DependenceGraph<int> &G) {
-  for (auto I = G.cbegin(), E = G.cend(); I != E; ++I) {
+  for (auto I = G.nodes_cbegin(), E = G.nodes_cend(); I != E; ++I) {
     cout << *I->first << ":";
     for (auto J = I->second.cbegin(), F = I->second.cend(); J != F; ++J) {
       cout << " " << **J;

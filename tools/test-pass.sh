@@ -31,4 +31,4 @@ else
 fi
 
 echo "Removing $2.bc and $2.ssa.bc"
-rm $2.bc $2.ssa.bc
+# rm $2.bc $2.ssa.bc

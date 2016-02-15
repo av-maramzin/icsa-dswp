@@ -25,15 +25,13 @@ struct DOTGraphTraits<DepGraphTraitsWrapper<int>>
   typedef DepGraphTraitsWrapper<int> GraphType;
   typedef DepNodeTraitsWrapper<int> NodeType;
 
-  DOTGraphTraits(bool isSimple = false)
-      : DefaultDOTGraphTraits(isSimple){};
+  DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple){};
 
   static string getGraphName(const GraphType &Graph) {
     return "Test dependence graph";
   }
 
-  string getNodeLabel(const NodeType *Node,
-                      const GraphType &Graph) {
+  string getNodeLabel(const NodeType *Node, const GraphType &Graph) {
     return to_string(*Node->getValue());
   }
 };

@@ -13,7 +13,6 @@ namespace icsa {
 
 string instructionToFunctionName(const Instruction &Inst);
 string basicBlockToFunctionName(const BasicBlock &BB);
-
 }
 
 #endif

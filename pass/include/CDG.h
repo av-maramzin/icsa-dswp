@@ -38,7 +38,9 @@ public:
     Info.addRequired<PostDominatorTree>();
   }
 
-  const char *getPassName() const override { return "Control Dependence Graph"; }
+  const char *getPassName() const override {
+    return "Control Dependence Graph";
+  }
 
   void releaseMemory() override { CDG.clear(); }
 

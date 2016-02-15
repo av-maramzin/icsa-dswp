@@ -80,7 +80,7 @@ public:
   typedef DepNodeIterator<ValueType> nodes_iterator;
 
 protected:
-  map<ValueType *, unique_ptr<NodeType>> Nodes;
+  map<const ValueType *, unique_ptr<NodeType>> Nodes;
 
 public:
   DepGraphTraitsWrapper(const DependenceGraph<ValueType> &Graph) {
@@ -93,7 +93,7 @@ public:
   nodes_iterator nodes_begin() const { return nodes_iterator(Nodes.begin()); }
   nodes_iterator nodes_end() const { return nodes_iterator(Nodes.end()); }
 
-  NodeType *operator[](ValueType *Value) { return Nodes[Value].get(); }
+  NodeType *operator[](const ValueType *Value) { return Nodes[Value].get(); }
 
   void writeToFile(string Filename) {
     errs() << "Writing '" << Filename << "'...";
@@ -117,11 +117,11 @@ public:
 protected:
   DepGraphTraitsWrapper<ValueType> &G;
   const ValueType *TheValue;
-  const set<ValueType *> *Children;
+  const set<const ValueType *> *Children;
 
 public:
   DepNodeTraitsWrapper(DepGraphTraitsWrapper<ValueType> &Graph,
-                       const ValueType *Value, const set<ValueType *> *C)
+                       const ValueType *Value, const set<const ValueType *> *C)
       : G(Graph), TheValue(Value), Children(C) {}
 
   const ValueType *getValue() const { return TheValue; }
@@ -149,8 +149,8 @@ public:
   typedef DepNodeTraitsWrapper<ValueType> NodeType;
 
 private:
-  typedef
-      typename map<ValueType *, unique_ptr<NodeType>>::const_iterator IndexType;
+  typedef typename map<const ValueType *, unique_ptr<NodeType>>::const_iterator
+      IndexType;
   IndexType idx;
 
 public:
@@ -209,14 +209,13 @@ public:
   typedef DepNodeTraitsWrapper<ValueType> NodeType;
 
 private:
-  typedef typename set<ValueType *>::iterator IndexType;
+  typedef typename set<const ValueType *>::iterator IndexType;
   GraphType &G;
   IndexType idx;
 
 public:
   // Begin iterator.
-  explicit inline DepNodeChildIterator(GraphType &Graph,
-                                         const IndexType &Index)
+  explicit inline DepNodeChildIterator(GraphType &Graph, const IndexType &Index)
       : G(Graph), idx(Index) {}
 
   inline bool operator==(const DepNodeChildIterator &x) const {
@@ -251,6 +250,5 @@ public:
   }
 };
 }
-
 
 #endif

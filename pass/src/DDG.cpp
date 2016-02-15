@@ -45,5 +45,4 @@ bool DataDependenceGraphPass::runOnFunction(Function &F) {
 
   return false;
 }
-
 }
