@@ -102,18 +102,6 @@ bool ProgramDependenceGraphPass::runOnFunction(Function &F) {
     }
   }
 
-  // Trim leaf jump instructions
-  vector<const Instruction *> removeNodes;
-  for (auto I = PDG.nodes_cbegin(), E = PDG.nodes_cend(); I != E; ++I) {
-    const BranchInst *BI = dyn_cast<BranchInst>(I->first);
-    if (BI != nullptr && BI->isUnconditional() && I->second.size() == 0) {
-      removeNodes.push_back(I->first);
-    }
-  }
-  for (auto node : removeNodes) {
-    PDG.removeNode(node);
-  }
-
   return false;
 }
 }

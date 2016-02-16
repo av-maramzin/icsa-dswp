@@ -46,15 +46,26 @@ bool PDGSCCGraphPass::runOnFunction(Function &F) {
     SCCs[pair.second];
     SCCs[pair.second].insert(pair.first);
   }
+  // Finish adding elements to SCCs, to ensure the memory layout won't change
+  // once we start using the internal pointers of the structure.
 
-  for (const auto &pair : SCCs) {
-    PSG.addNode(&pair.second);
+  for (const auto &pair : component) {
+    const set<const Instruction *> *SCC = &SCCs.at(pair.second);
+    InstToSCC[pair.first] = SCC;
+    PSG.addNode(SCC);
   }
 
   for (const auto &pair : component) {
     for (auto I = PDG.child_cbegin(pair.first), E = PDG.child_cend(pair.first);
          I != E; ++I) {
-      PSG.addEdge(&SCCs[pair.second], &SCCs[component.at(*I)]);
+      auto SCC1 = &SCCs[pair.second];
+      auto SCC2 = &SCCs[component.at(*I)];
+      // Don't add edges from nodes to themselves: this information is
+      // implicitly stored in the number of elements SCCs have: if they are
+      // more than 1, then the SCC obviously depends on itself.
+      if (SCC1 != SCC2) {
+        PSG.addEdge(SCC1, SCC2);
+      }
     }
   }
 
