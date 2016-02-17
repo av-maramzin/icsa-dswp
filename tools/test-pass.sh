@@ -16,7 +16,7 @@ SELF_DIR=$(dirname $0)
 PROJECT_ROOT=${PWD}/${SELF_DIR}/../
 
 echo "Compiling $2 to $2.bc"
-clang++ -std=c++11 -c -emit-llvm $2 -o $2.bc
+clang++ -g -std=c++11 -c -emit-llvm $2 -o $2.bc
 
 echo "Converting $2.bc to SSA form in $2.ssa.bc"
 opt -mem2reg $2.bc -o $2.ssa.bc

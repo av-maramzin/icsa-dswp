@@ -8,6 +8,8 @@ using std::error_code;
 
 #include "llvm/IR/Function.h"
 using llvm::Function;
+#include "llvm/IR/DebugInfoMetadata.h"
+using llvm::DILocation;
 
 #include "llvm/Pass.h"
 using llvm::FunctionPass;
@@ -40,10 +42,14 @@ struct DecoupleLoopsPrinter : public FunctionPass {
     auto LoopToIterScc = DLP.getLoopToIterScc();
     auto LoopToWorkScc = DLP.getLoopToWorkScc();
 
+    set<unsigned> lines;
+
     raw_os_ostream roos(cout);
-    roos << "Function " << F.getName() << ":\n\n";
+    roos << "\nFunction " << F.getName() << ":\n\n";
     int count = 1;
     for (Loop *L : LI) {
+      // Ignore loops we cannot decouple.
+      if (LoopToWorkScc[L].size() == 0) continue;
       roos << "Loop " << count++ << ":\n";
       for (Loop::block_iterator BI = L->block_begin(), BE = L->block_end();
            BI != BE; ++BI) {
@@ -52,6 +58,10 @@ struct DecoupleLoopsPrinter : public FunctionPass {
         BB->printAsOperand(roos);
         roos << '\n';
         for (Instruction &Inst : *BB) {
+          if (DILocation *Loc = Inst.getDebugLoc()) {
+            lines.insert(Loc->getLine());
+          }
+
           Inst.print(roos);
           if (LoopToWorkScc[L].find(PSGP.getSCC(&Inst)) !=
               LoopToWorkScc[L].end()) {
@@ -64,6 +74,14 @@ struct DecoupleLoopsPrinter : public FunctionPass {
           roos << '\n';
         }
       }
+    }
+
+    if (lines.size() > 0) {
+      roos << " on lines:";
+      for (unsigned line : lines) {
+        roos << ' ' << line;
+      }
+      roos << '\n';
     }
 
     return false;
