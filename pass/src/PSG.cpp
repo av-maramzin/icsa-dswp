@@ -55,11 +55,12 @@ bool PDGSCCGraphPass::runOnFunction(Function &F) {
     PSG.addNode(SCC);
   }
 
-  for (const auto &pair : component) {
-    for (auto I = PDG.child_cbegin(pair.first), E = PDG.child_cend(pair.first);
-         I != E; ++I) {
-      auto SCC1 = &SCCs[pair.second];
-      auto SCC2 = &SCCs[component.at(*I)];
+  // for (const auto &pair : component) {
+  for (auto I = PDG.nodes_cbegin(), E = PDG.nodes_cend(); I != E; ++I) {
+    for (auto J = PDG.child_cbegin(I->first), F = PDG.child_cend(I->first);
+         J != F; ++J) {
+      auto SCC1 = &SCCs[component.at(I->first)];
+      auto SCC2 = &SCCs[component.at(*J)];
       // Don't add edges from nodes to themselves: this information is
       // implicitly stored in the number of elements SCCs have: if they are
       // more than 1, then the SCC obviously depends on itself.

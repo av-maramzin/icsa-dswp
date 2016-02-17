@@ -45,19 +45,22 @@ contains the following LLVM 3.7.0 function passes:
  * `ddg` - builds the Data Dependence Graph of a function using the Use-Def
    chains already built-in LLVM; in order for this pass to work, the bytecode
    should be in SSA form;
- * `mdg` - builds the Memory Dependence Graph of a function using
-   `llvm/Analysis/MemoryDependenceAnalysis.h`; only instruction definition
-   dependencies are considered (no clobber/alias dependencies);
- * `cdg` - builds the [Control Dependence Graph][cytron1989] of a function;
- * `pdg` - combines the previous three graphs in a single graph of instruction
-   dependencies; note that since `cdg` produces a basic block dependence graph
-   all of the instructions in the dependant block are made to depend on the
-   branch instruction of the dependency source;
- * `psg` - incomplete and memory leaking experimental pass; finds the Strongly
-   Connected Components of the Program Dependence Graph and builds a graph out
-   of them;
+* `mdg` - builds the Memory Dependence Graph of a function using
+   `llvm / Analysis / MemoryDependenceAnalysis.h`;
+only instruction definition dependencies are considered(no clobber /
+                                                        alias dependencies);
+* `cdg` - builds the[Control Dependence Graph][cytron1989] of a function;
+* `pdg` - combines the previous three graphs in a single graph of instruction
+              dependencies;
+note that since `cdg` produces a basic block dependence graph all of the
+    instructions in the dependant block are made to depend on the branch
+        instruction of the dependency source;
+* `psg` - incomplete and memory leaking experimental pass;
+finds the Strongly Connected Components of the Program Dependence
+    Graph and builds a graph out of them;
  * `dot-XXX` - prints a .dot representation of each function for the graph build
-   by `XXX` to a file; `XXX` is one of the five graph building passes;
+   by `XXX` to a file;
+ `XXX` is one of the five graph building passes;
  * `find-dswp` - uses the experimental `psg` pass to analyse an LLVM bytecode
    file and prints DSWP opportunities to the standard output.
 
@@ -109,7 +112,7 @@ dependants of a single node, one needs to use `iterator->second.begin()` and
 
 In order to test this class, compile and run `pass/test/TestDependence.cpp`.
 
-### DDG.h and DDG.cpp
+#### DDG.h and DDG.cpp
 
 The simplest use of the `DependenceGraph` class is in the implementation of the
 Data Dependence Graph (DDG) LLVM function pass, which builds the DDG of a
@@ -133,7 +136,7 @@ with `-ddg` and a test `cpp` file as command line arguments.
 This pass is useless on its own, as there is no way to extract its result. For
 this reason, we need to look at `DDGPrinter.cpp`.
 
-### DDGPrinter.cpp and GraphTraits
+#### DDGPrinter.cpp and GraphTraits
 
 The DDG of a function can be printed using the `DDGPrinter` pass, defined in
 `DDGPrinter.cpp`. It depends on the `DataDependenceGraphPass` as specified in
@@ -156,12 +159,14 @@ When specializing `GraphTraits` for a graph type, the following elements need to
 be defined:
 
  * `NodeType` - the class that represents a node of the graph;
- * `nodes_iterator` - an iterator that is constructed from a constant reference
-   to a graph object and dereferences to a pointer to a node object;
+ * `nodes_iterator` -
+     an iterator that is constructed from a constant reference to a graph
+         object and dereferences to a pointer to a node object;
  * `nodes_begin` and `nodes_end` - methods that construct the begin and end
    `nodes_iterator`s given a constant reference to a graph object;
- * `ChildIteratorType` - an iterator that is constructed from a pointer to a
-   node object and is dereferenced to a pointer to a node object;
+ * `ChildIteratorType` -
+     an iterator that is constructed from a pointer to a node object and is
+         dereferenced to a pointer to a node object;
  * `child_begin` and `child_end` - methods that construct the begin and end
    `ChildIteratorType`s given a pointer to a node object.
 
@@ -218,7 +223,7 @@ file can be converted to a PDF using the `dot` tool:
 dot -Tpdf foo.dot -o foo.pdf
 ```
 
-# MDG.h and MDG.cpp
+#### MDG.h and MDG.cpp
 
 Once we have the pipeline set up for one dependence graph, it is easy to
 replicate the code for others. The `MemoryDependenceGraphPass` that we
@@ -240,7 +245,7 @@ The `MDGPrinter.cpp` implements a printing pass, almost identical to
 first argument can be either `-mdg` or `-dot-mdg`. Where the former just tests
 the memory dependence graph pass, without printing it.
 
-# CDG.h and CDG.cpp
+#### CDG.h and CDG.cpp
 
 Similarly to `MDG.h` and `DDG.h`, `CDG.h` defines a simple pass that stores a
 dependence graph and provides ways to access it and clear it. This dependence
@@ -265,7 +270,7 @@ basic block as labels in the resulting graph.
 These passes can be tested using `tools/test-pass.sh` and `-cdg` or `-dot-cdg`
 as first parameters.
 
-# PDG.h and PDG.cpp
+#### PDG.h and PDG.cpp
 
 The header file `PDG.h` defines yet another dependence graph on instructions.
 However, this one combines all of the previous three - CDG, DDG, and MDG - into
@@ -277,20 +282,59 @@ copies the dependences from the data and memory dependence graphs. The ones in
 the control dependence graph, however, are on basic blocks rather than
 instructions. In order to convert them, all the instructions of the dependant
 basic block are made to depend on the last instruction of the parent basic
-block. That instruction is always a conditional branch, if there is a control
-depdence. Additionally, extra dependences are added from the branch instruction
-of basic blocks to phi nodes that have constants as in-values from these basic
-blocks. This is done to reflect the fact that if a phi node has a constant as an
-in-value that is equivalent to defining the initial value for a variable in that
-in-block. Finally, jump instructions that don't have any outgoing dependences
-are removed do declutter the graph.
+block. That instruction is always a conditional branch, in order for there to
+be a control dependence. Additionally, extra dependences are added from the
+branch instruction of basic blocks to phi nodes that have constants as
+in-values from these basic blocks. This is done to reflect the fact that if a
+phi node has a constant as an in-value that is equivalent to defining the
+initial value for a variable in that in-block.
 
-# PSG.h and DecoupleLoops.h
+#### PSG.h
 
-TODO
+The program dependence graph is used by the `PDGSCCGraphPass` which constructs a
+dependence graph of the strongly connected components in a `PDG`. This
+information is stored as a `DependenceGraph` on `std::set`s of `const
+Instruction *`s. Each set represents a set of `Instruction`s which constitute a
+strongly connected component in the `PDG`.There is also a `std::map` from the root of
+strongly connected components to the components themselves, which is used to act
+as a memory storage for the sets. Pointers to this storage are used in the
+output graph `PSG` and the map from instructions to their connected components
+`InstToSCC`. In addition to the standard interface implemented for the other
+dependence graphs, there is a getter that allows accessing the strongly
+connected component of an instruction, given the instruction.
+
+#### GraphUtils.h
+
+A small library of graph utilities for `DependenceGraph`s. It exports functions
+`transpose` and `findSCC` to respectively compute the transpose of a graph
+(reversing the edges) and finding the strongly connected components of a graph,
+using the Kosajaru's algorithm.
+
+#### PSG.cpp
+
+The implementation, which is in `PSG.cpp` works as follows. The `GraphUtils.h`
+library is used to compute the root instruction of the SCC of each instruction
+and is stored in the `component` map. This map is traversed and used to
+construct the `SCCs` map from roots of strongly connected components to the
+components themselves. After this is done, each SCC is added as a node to the
+dependence graph `PSG` and the map from instructions to their components is
+cached in `InstToSCC`. Finally, for each edge in the `PDG` a corresponding edge
+is added in the `PSG`, where instructions are mapped to their SCCs.
+
+#### DecoupleLoops.h and DecoupleLoops.cpp
+
+Finally, `DecoupleLoops.h` and `DecoupleLoops.cpp` implement a pass, that using
+the `PSG` graph of a function marks all instructions of the function as either
+`iter` or `work`. `iter` instructions make the loop go round, while `work`
+instructions produce additional results from running the loop. All loops have
+`iter` instructions, but if `work` instructions can be extracted, then the loop
+can potentially benefit from Decoupled Software Pipelining. The result of this
+pass is two `std::map`s from `const Loop *` to the set of `iter` SCCs and the
+set of `work` SCCs. These are stored in the `PSG` pass, so it's memory shouldn't
+be cleared in order for this pass to work. (maybe we should just copy the
+memory).
 
 [ottoni2005]: (http://dl.acm.org/citation.cfm?id=1100543)
 [2011-dswp-prj]: (http://www.cs.cmu.edu/~fuyaoz/courses/15745/)
 [2013-dswp-prj]: (http://www.cs.cmu.edu/~avelingk/compilers/)
 [cytron1989]: (http://dl.acm.org/citation.cfm?id=75280)
-

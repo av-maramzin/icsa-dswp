@@ -19,6 +19,11 @@ using icsa::PDGSCCGraphPass;
 namespace icsa {
 
 class DecoupleLoopsPass : public FunctionPass {
+private:
+  LoopInfo LI;
+  map<const Loop *, set<const set<const Instruction *> *>> LoopToIterScc;
+  map<const Loop *, set<const set<const Instruction *> *>> LoopToWorkScc;
+
 public:
   static char ID;
 
@@ -29,6 +34,16 @@ public:
   void getAnalysisUsage(AnalysisUsage &Info) const override {
     Info.setPreservesAll();
     Info.addRequired<PDGSCCGraphPass>();
+  }
+
+  const LoopInfo &getLI() { return LI; }
+  const map<const Loop *, set<const set<const Instruction *> *>> &
+  getLoopToIterScc() {
+    return LoopToIterScc;
+  }
+  const map<const Loop *, set<const set<const Instruction *> *>> &
+  getLoopToWorkScc() {
+    return LoopToWorkScc;
   }
 };
 }

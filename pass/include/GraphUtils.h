@@ -26,24 +26,6 @@ public:
 private:
   // Helper functions.
 
-  /// u - start node of enumeration
-  /// visited - map from nodes to whether they were visited or not
-  /// result - a list of the nodes in post-order
-  /// g - graph from which to take the nodes;
-  static void postOrderEnumerate(const ValueType *u,
-                                 map<const ValueType *, bool> &visited,
-                                 vector<const ValueType *> &result,
-                                 const GraphType &g) {
-    if (!visited[u]) {
-      visited[u] = true;
-      auto deps = g.getDependants(u);
-      for (auto I = deps.begin(), E = deps.end(); I != E; ++I) {
-        postOrderEnumerate(*I, visited, result, g);
-      }
-      result.insert(result.begin(), u);
-    }
-  }
-
   // Returns a map from each node of the graph to `false`. Relying on move
   // semantics for efficient return. To be used as a memory of which node is
   // visited.
@@ -66,6 +48,40 @@ private:
     return component;
   }
 
+  /// u - start node of enumeration
+  /// visited - map from nodes to whether they were visited or not
+  /// result - a list of the nodes in post-order
+  /// g - graph from which to take the nodes;
+  static void postOrderEnumerate(const ValueType *u,
+                                 map<const ValueType *, bool> &visited,
+                                 vector<const ValueType *> &result,
+                                 const GraphType &g) {
+    if (!visited[u]) {
+      visited[u] = true;
+      auto deps = g.getDependants(u);
+      for (auto I = deps.begin(), E = deps.end(); I != E; ++I) {
+        postOrderEnumerate(*I, visited, result, g);
+      }
+      result.insert(result.begin(), u);
+    }
+  }
+
+  /// u - current node of recursive traversal
+  /// root - current root of traversal
+  /// component - store the result here; a map from nodes to their SCC
+  /// g - use nodes from this graph as members of `component`
+  static void
+  assignComponent(const ValueType *u, const ValueType *root,
+                  map<const ValueType *, const ValueType *> &component,
+                  const GraphType &g) {
+    if (component[u] == nullptr) {
+      component[u] = root;
+      auto deps = g.getDependants(u);
+      for (auto I = deps.begin(), E = deps.end(); I != E; ++I) {
+        assignComponent(*I, root, component, g);
+      }
+    }
+  }
 public:
   // Reverse all edges in `g` and return that as a new graph.
   static GraphType transpose(const GraphType &g) {
@@ -109,24 +125,6 @@ public:
     }
 
     return component;
-  }
-
-private:
-  /// u - current node of recursive traversal
-  /// root - current root of traversal
-  /// component - store the result here; a map from nodes to their SCC
-  /// g - use nodes from this graph as members of `component`
-  static void
-  assignComponent(const ValueType *u, const ValueType *root,
-                  map<const ValueType *, const ValueType *> &component,
-                  const GraphType &g) {
-    if (component[u] == nullptr) {
-      component[u] = root;
-      auto deps = g.getDependants(u);
-      for (auto I = deps.begin(), E = deps.end(); I != E; ++I) {
-        assignComponent(*I, root, component, g);
-      }
-    }
   }
 };
 }

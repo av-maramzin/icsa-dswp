@@ -59,10 +59,10 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
 
   DominatorTree DT;
   DT.recalculate(F);
-
-  LoopInfo LI;
   LI.Analyze(DT);
+  DT.releaseMemory();
 
+  // Given:
   // Inst -> SCC
   // Loop -> Inst
   //
@@ -84,8 +84,6 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
     }
   }
 
-  set<SccConstPtr> workScc;
-  set<SccConstPtr> iterScc;
   // 2: for all SCC S1:
   //      if in loop: call the loop L1
   //        for all SCC S2, s.t. S1 depends on S2:
@@ -95,6 +93,7 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
   for (auto I = PSG.nodes_cbegin(), E = PSG.nodes_cend(); I != E; ++I) {
     SccConstPtr S1 = I->first;
     auto S1LoopPair = SccToLoop.find(S1);
+    auto S1Loop = S1LoopPair->second;
     if (S1LoopPair == SccToLoop.end()) {
       continue;
     }
@@ -102,59 +101,16 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
       SccConstPtr S2 = *J;
       auto S2LoopPair = SccToLoop.find(S2);
       if (S2LoopPair != SccToLoop.end() &&
-          S1LoopPair->second == S2LoopPair->second) {
-        workScc.insert(S1);
+          S1Loop == S2LoopPair->second) {
+        LoopToWorkScc[S1Loop].insert(S1);
         break;
       }
     }
-    if (workScc.find(S1) == workScc.end()) {
-      iterScc.insert(S1);
+    if (LoopToWorkScc[S1Loop].find(S1) == LoopToWorkScc[S1Loop].end()) {
+      LoopToIterScc[S1Loop].insert(S1);
     }
   }
-
-  // 3: LoopInst -> work / iter
-  set<const Instruction *> workInst;
-  set<const Instruction *> iterInst;
-  for (Loop *L : LI) {
-    for (Loop::block_iterator BI = L->block_begin(), BE = L->block_end();
-         BI != BE; ++BI) {
-      BasicBlock *BB = *BI;
-      for (Instruction &Inst : *BB) {
-        SccConstPtr SCC = PSGP.getSCC(&Inst);
-        if (workScc.find(SCC) != workScc.end()) {
-          workInst.insert(&Inst);
-        }
-        if (iterScc.find(SCC) != iterScc.end()) {
-          iterInst.insert(&Inst);
-        }
-      }
-    }
-  }
-
-  // tmp: print
-  raw_os_ostream roos(cout);
-  roos << "Function " << F.getName() << ":\n\n";
-  int count = 1;
-  for (Loop *L : LI) {
-    roos << "Loop " << count++ << ":\n";
-    for (Loop::block_iterator BI = L->block_begin(), BE = L->block_end();
-         BI != BE; ++BI) {
-      BasicBlock *BB = *BI;
-      roos << '\n';
-      BB->printAsOperand(roos);
-      roos << '\n';
-      for (Instruction &Inst : *BB) {
-        Inst.print(roos);
-        if (workInst.find(&Inst) != workInst.end()) {
-          roos << " ; work";
-        }
-        if (iterInst.find(&Inst) != iterInst.end()) {
-          roos << " ; iter";
-        }
-        roos << '\n';
-      }
-    }
-  }
+  SccToLoop.clear();
 
   return false;
 }

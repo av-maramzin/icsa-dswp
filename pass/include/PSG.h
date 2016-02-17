@@ -25,10 +25,11 @@ namespace icsa {
 // Designed after ControlDependenceGraphPass.
 class PDGSCCGraphPass : public FunctionPass {
 private:
-  DependenceGraph<set<const Instruction *>> PSG;
   // Keeps track of the memory that needs to be cleaned. It's a map from the
   // root of a SCC to the SCC itself.
   map<const Instruction *, set<const Instruction *>> SCCs;
+
+  DependenceGraph<set<const Instruction *>> PSG;
   // Maps instructions to their SCC.
   map<const Instruction *, const set<const Instruction *> *> InstToSCC;
 
