@@ -10,6 +10,7 @@ using std::error_code;
 using llvm::Function;
 #include "llvm/IR/DebugInfoMetadata.h"
 using llvm::DILocation;
+using llvm::DIFile;
 
 #include "llvm/Pass.h"
 using llvm::FunctionPass;
@@ -43,6 +44,7 @@ struct DecoupleLoopsPrinter : public FunctionPass {
     auto LoopToWorkScc = DLP.getLoopToWorkScc();
 
     set<unsigned> lines;
+    DIFile *File = nullptr;
 
     raw_os_ostream roos(cout);
     roos << "\nFunction " << F.getName() << ":\n\n";
@@ -59,6 +61,9 @@ struct DecoupleLoopsPrinter : public FunctionPass {
         roos << '\n';
         for (Instruction &Inst : *BB) {
           if (DILocation *Loc = Inst.getDebugLoc()) {
+            if (!File) {
+              File = Loc->getFile();
+            }
             lines.insert(Loc->getLine());
           }
 
@@ -76,6 +81,11 @@ struct DecoupleLoopsPrinter : public FunctionPass {
       }
     }
 
+    if (File != nullptr) {
+      roos << " in file: ";
+      File->print(roos);
+      roos << '\n';
+    }
     if (lines.size() > 0) {
       roos << " on lines:";
       for (unsigned line : lines) {

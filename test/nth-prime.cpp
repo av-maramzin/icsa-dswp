@@ -10,7 +10,7 @@ using std::cout;
 
 typedef unsigned int uint;
 
-const uint N = 1000000;
+const uint N = 200000;
 uint primes[N];
 
 int main() {
