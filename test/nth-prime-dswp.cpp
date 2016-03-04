@@ -16,17 +16,29 @@ using std::cout;
 
 typedef unsigned int uint;
 
+// T should have a default constructor: the end-of-queue package will attempt
+// to use it.
+template <typename T> struct pc_packet {
+  bool end_of_queue;
+  T datum;  // invalid if end_of_queue is `true`
+};
+
 template <typename T> class pc_queue {
 private:
-  std::mutex mutex;                       // used to ensure thread-safety
-  std::condition_variable data_available; // used to ensure thread-safety
-  std::queue<T> data;
+  std::mutex mutex;
+  std::condition_variable data_available;
+  std::queue<pc_packet<T>> data;
 
 public:
   void produce(T element) {
     std::unique_lock<std::mutex> lock(mutex);
-    data.push(element);
+    data.push({false, element});
     data_available.notify_one();
+  }
+
+  void produce_end() {
+    std::unique_lock<std::mutex> lock(mutex);
+    data.push({true, T()});
   }
 
   T consume() {
@@ -34,32 +46,28 @@ public:
     if (data.empty()) {
       data_available.wait(lock);
     }
-    T element = data.front();
+    T element = data.front().datum;
     data.pop();
     return element;
+  }
+
+  bool end_reached() {
+    std::unique_lock<std::mutex> lock(mutex);
+    return data.front().end_of_queue;
   }
 };
 
 const int N = 200000;
 uint primes[N];
 
-// Message that tells the consumer to stop.
-int game_over = -1;
-
-struct safe_args_t {
-  pc_queue<int> &queue;
-  safe_args_t(pc_queue<int> &queue)
-      : queue(queue) {}
-};
-
-void consumer_safe(const safe_args_t &args) {
+// Cannot pass a modifiable reference to a thread function.
+void consumer(pc_queue<uint> *const queue) {
   uint p = 2;
 
-  while (true) {
-    int count = args.queue.consume();
-    if (count == game_over) break;
-continue_while:
-    for (int i = 0; i < count; ++i) {
+  while (!queue->end_reached()) {
+    uint count = queue->consume();
+  continue_while:
+    for (uint i = 0; i < count; ++i) {
       if (0 == p % primes[i]) {
         ++p;
         goto continue_while;
@@ -73,18 +81,17 @@ continue_while:
 }
 
 int main() {
-  int count = 0;
+  uint count = 0;
 
-  pc_queue<int> queue;
-  safe_args_t args(queue);
-  std::thread consumer(consumer_safe, args);
+  pc_queue<uint> queue;
+  std::thread c(consumer, &queue);
 
   while (count < N) {
     queue.produce(count++);
   }
-  queue.produce(game_over);
+  queue.produce_end();
 
-  consumer.join();
+  c.join();
 
   cout << primes[N - 1] << '\n';
   return 0;
