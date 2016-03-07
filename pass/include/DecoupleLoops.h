@@ -45,6 +45,17 @@ public:
   getLoopToWorkScc() {
     return LoopToWorkScc;
   }
+
+  // Is Inst a work instruction in the loop L?
+  bool isWork(const Instruction &Inst, const Loop *L);
+
+  // Is Inst an iter instruction in the loop L?
+  bool isIter(const Instruction &Inst, const Loop *L);
+
+  // Does loop L have work instructions?
+  bool hasWork(const Loop *L) {
+    return LoopToWorkScc[L].size() == 0;
+  }
 };
 }
 

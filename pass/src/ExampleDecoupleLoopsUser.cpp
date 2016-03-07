@@ -36,27 +36,22 @@ struct ExampleDecoupleLoopsUser : public FunctionPass {
   ExampleDecoupleLoopsUser() : FunctionPass(ID) {}
 
   bool runOnFunction(Function &F) override {
-    PDGSCCGraphPass &PSGP = Pass::getAnalysis<PDGSCCGraphPass>();
     DecoupleLoopsPass &DLP = Pass::getAnalysis<DecoupleLoopsPass>();
 
     const LoopInfo &LI = DLP.getLI();
-    auto LoopToIterScc = DLP.getLoopToIterScc();
-    auto LoopToWorkScc = DLP.getLoopToWorkScc();
 
     raw_os_ostream roos(cout);
     for (Loop *L : LI) {
       // Ignore loops we cannot decouple.
-      if (LoopToWorkScc[L].size() == 0) continue;
+      if (!DLP.hasWork(L)) continue;
       for (Loop::block_iterator BI = L->block_begin(), BE = L->block_end();
            BI != BE; ++BI) {
         BasicBlock *BB = *BI;
         for (Instruction &Inst : *BB) {
-          if (LoopToWorkScc[L].find(PSGP.getSCC(&Inst)) !=
-              LoopToWorkScc[L].end()) {
+          if (DLP.isWork(Inst, L)) {
             // Inst, from loop L, is a work instruction
           }
-          if (LoopToIterScc[L].find(PSGP.getSCC(&Inst)) !=
-              LoopToIterScc[L].end()) {
+          if (DLP.isIter(Inst, L)) {
             // Inst, from loop L, is an iter instruction
           }
         }
@@ -68,7 +63,6 @@ struct ExampleDecoupleLoopsUser : public FunctionPass {
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.setPreservesAll();
-    AU.addRequired<PDGSCCGraphPass>();
     AU.addRequired<DecoupleLoopsPass>();
   }
 };

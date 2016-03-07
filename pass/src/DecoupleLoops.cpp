@@ -111,4 +111,16 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
 
   return false;
 }
+
+bool DecoupleLoopsPass::isWork(const Instruction &Inst, const Loop *L) {
+  const PDGSCCGraphPass &PSGP = Pass::getAnalysis<PDGSCCGraphPass>();
+  return LoopToWorkScc[L].find(PSGP.getSCC(&Inst)) !=
+      LoopToWorkScc[L].end();
+}
+
+bool DecoupleLoopsPass::isIter(const Instruction &Inst, const Loop *L) {
+  const PDGSCCGraphPass &PSGP = Pass::getAnalysis<PDGSCCGraphPass>();
+  return LoopToIterScc[L].find(PSGP.getSCC(&Inst)) !=
+      LoopToIterScc[L].end();
+}
 }
