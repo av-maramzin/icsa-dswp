@@ -1,8 +1,5 @@
 #include "DecoupleLoops.h"
 
-#include <iostream>
-using std::cout;
-
 #include <map>
 using std::map;
 using std::pair;
