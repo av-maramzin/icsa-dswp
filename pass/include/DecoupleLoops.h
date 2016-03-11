@@ -20,7 +20,7 @@ namespace icsa {
 
 class DecoupleLoopsPass : public FunctionPass {
 private:
-  LoopInfo LI;
+  map<const Function *, LoopInfo> LI;
   map<const Loop *, set<const set<const Instruction *> *>> LoopToIterScc;
   map<const Loop *, set<const set<const Instruction *> *>> LoopToWorkScc;
 
@@ -36,7 +36,7 @@ public:
     Info.addRequired<PDGSCCGraphPass>();
   }
 
-  const LoopInfo &getLI() { return LI; }
+  const LoopInfo &getLI(const Function *F) { return LI[F]; }
   const map<const Loop *, set<const set<const Instruction *> *>> &
   getLoopToIterScc() {
     return LoopToIterScc;
@@ -54,7 +54,7 @@ public:
 
   // Does loop L have work instructions?
   bool hasWork(const Loop *L) {
-    return LoopToWorkScc[L].size() == 0;
+    return LoopToWorkScc[L].size() != 0;
   }
 };
 }

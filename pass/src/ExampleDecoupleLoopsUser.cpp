@@ -23,9 +23,6 @@ using llvm::AnalysisUsage;
 #include "llvm/Support/raw_os_ostream.h"
 using llvm::raw_os_ostream;
 
-#include "PSG.h"
-using icsa::PDGSCCGraphPass;
-
 #include "DecoupleLoops.h"
 using icsa::DecoupleLoopsPass;
 
@@ -38,7 +35,7 @@ struct ExampleDecoupleLoopsUser : public FunctionPass {
   bool runOnFunction(Function &F) override {
     DecoupleLoopsPass &DLP = Pass::getAnalysis<DecoupleLoopsPass>();
 
-    const LoopInfo &LI = DLP.getLI();
+    const LoopInfo &LI = DLP.getLI(&F);
 
     raw_os_ostream roos(cout);
     for (Loop *L : LI) {

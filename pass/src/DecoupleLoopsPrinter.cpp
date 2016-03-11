@@ -23,9 +23,6 @@ using llvm::AnalysisUsage;
 #include "llvm/Support/raw_os_ostream.h"
 using llvm::raw_os_ostream;
 
-#include "PSG.h"
-using icsa::PDGSCCGraphPass;
-
 #include "DecoupleLoops.h"
 using icsa::DecoupleLoopsPass;
 
@@ -36,22 +33,21 @@ struct DecoupleLoopsPrinter : public FunctionPass {
   DecoupleLoopsPrinter() : FunctionPass(ID) {}
 
   bool runOnFunction(Function &F) override {
-    PDGSCCGraphPass &PSGP = Pass::getAnalysis<PDGSCCGraphPass>();
     DecoupleLoopsPass &DLP = Pass::getAnalysis<DecoupleLoopsPass>();
 
-    const LoopInfo &LI = DLP.getLI();
-    auto LoopToIterScc = DLP.getLoopToIterScc();
-    auto LoopToWorkScc = DLP.getLoopToWorkScc();
-
-    set<unsigned> lines;
-    DIFile *File = nullptr;
+    const LoopInfo &LI = DLP.getLI(&F);
 
     raw_os_ostream roos(cout);
     roos << "\nFunction " << F.getName() << ":\n\n";
     int count = 1;
     for (Loop *L : LI) {
+      set<unsigned> lines;
+      DIFile *File = nullptr;
+
       // Ignore loops we cannot decouple.
-      if (LoopToWorkScc[L].size() == 0) continue;
+      if (!DLP.hasWork(L)) continue;
+      // Ignore loops that are not top-level (nested loops).
+      if (L->getLoopDepth() > 1) continue;
       roos << "Loop " << count++ << ":\n";
       for (Loop::block_iterator BI = L->block_begin(), BE = L->block_end();
            BI != BE; ++BI) {
@@ -68,30 +64,28 @@ struct DecoupleLoopsPrinter : public FunctionPass {
           }
 
           Inst.print(roos);
-          if (LoopToWorkScc[L].find(PSGP.getSCC(&Inst)) !=
-              LoopToWorkScc[L].end()) {
+          if (DLP.isWork(Inst, L)) {
             roos << " ; work";
           }
-          if (LoopToIterScc[L].find(PSGP.getSCC(&Inst)) !=
-              LoopToIterScc[L].end()) {
+          if (DLP.isIter(Inst, L)) {
             roos << " ; iter";
           }
           roos << '\n';
         }
       }
-    }
 
-    if (File != nullptr) {
-      roos << " in file: ";
-      File->print(roos);
-      roos << '\n';
-    }
-    if (lines.size() > 0) {
-      roos << " on lines:";
-      for (unsigned line : lines) {
-        roos << ' ' << line;
+      if (File != nullptr) {
+        roos << " in file: ";
+        File->print(roos);
+        roos << '\n';
       }
-      roos << '\n';
+      if (lines.size() > 0) {
+        roos << " on lines:";
+        for (unsigned line : lines) {
+          roos << ' ' << line;
+        }
+        roos << '\n';
+      }
     }
 
     return false;
@@ -99,7 +93,6 @@ struct DecoupleLoopsPrinter : public FunctionPass {
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.setPreservesAll();
-    AU.addRequired<PDGSCCGraphPass>();
     AU.addRequired<DecoupleLoopsPass>();
   }
 };
