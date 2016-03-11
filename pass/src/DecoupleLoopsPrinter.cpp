@@ -1,6 +1,12 @@
 #include <iostream>
 using std::cout;
 
+#include <set>
+using std::set;
+
+#include <vector>
+using std::vector;
+
 #include <string>
 using std::string;
 #include <system_error>
@@ -27,6 +33,8 @@ using llvm::raw_os_ostream;
 using icsa::DecoupleLoopsPass;
 
 namespace icsa {
+
+void printLocInfo(DIFile *File, const set<unsigned> &lines, raw_os_ostream &roos);
 
 struct DecoupleLoopsPrinter : public FunctionPass {
   static char ID;
@@ -74,18 +82,7 @@ struct DecoupleLoopsPrinter : public FunctionPass {
         }
       }
 
-      if (File != nullptr) {
-        roos << " in file: ";
-        File->print(roos);
-        roos << '\n';
-      }
-      if (lines.size() > 0) {
-        roos << " on lines:";
-        for (unsigned line : lines) {
-          roos << ' ' << line;
-        }
-        roos << '\n';
-      }
+      printLocInfo(File, lines, roos);
     }
 
     return false;
@@ -96,6 +93,16 @@ struct DecoupleLoopsPrinter : public FunctionPass {
     AU.addRequired<DecoupleLoopsPass>();
   }
 };
+
+void printLocInfo(DIFile *File, const set<unsigned> &lines, raw_os_ostream &roos) {
+  if (File != nullptr) {
+    roos << File->getDirectory() << '/' << File->getFilename();
+    for (unsigned line : lines) {
+      roos << ' ' << line;
+    }
+    roos << '\n';
+  }
+}
 
 char DecoupleLoopsPrinter::ID = 0;
 RegisterPass<DecoupleLoopsPrinter> DecoupleLoopsPrinterRegister(
