@@ -17,9 +17,6 @@ using llvm::inst_iterator;
 #include "llvm/PassSupport.h"
 using llvm::RegisterPass;
 
-#include "llvm/Support/Casting.h"
-using llvm::dyn_cast;
-
 #include "Dependence.h"
 using icsa::DependenceGraph;
 

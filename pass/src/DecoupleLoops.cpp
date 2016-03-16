@@ -32,9 +32,6 @@ using llvm::BranchInst;
 #include "llvm/IR/Dominators.h"
 using llvm::DominatorTree;
 
-#include "llvm/Support/Casting.h"
-using llvm::dyn_cast;
-
 #include "llvm/IR/DebugInfoMetadata.h"
 using llvm::DILocation;
 
