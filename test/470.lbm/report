@@ -1,0 +1,8 @@
+Total runtime: 7514042568
+main 100%
+  MAIN_initialize
+    Time for loop 0 (2 invocations): 208587950	/ 2.775975%	/ 1.387988%  // lbm.c LBM_initializeGrid
+    Time for loop 1 (2 invocations): 117457803	/ 1.563177%	/ 0.781589%  // lbm.c LBM_loadObstacleFile
+  Time for loop 12 (1 invocations): 6879125905	/ 91.550265%	/ 91.550265%  // main.c main
+    Time for loop 4 (20 invocations): 6741185369	/ 89.714495%	/ 4.485725%  // lbm.c LBM_performStreamCollide
+    Time for loop 7 (2 invocations): 273949251	/ 3.645830%	/ 1.822915%  // lbm.c LBM_showGridStatistics
