@@ -1,0 +1,35 @@
+main 100%
+  quantum_exp_mod_n
+    loop 12 (1 invocations): 10745562398	/ 94.920001%	/ 94.920001%
+      mul_mod_n
+        muln (61) + muln_inv (62)
+          loop 61 (15 invocations): 5323513644	/ 47.024800%	/ 3.134987%
+          loop 62 (15 invocations): 5230320988	/ 46.201590%	/ 3.080106%
+            add_mod_n
+              addn + addn_inv
+                test
+                  loop 50 (420 invocations): 1789338875	/ 15.805971%	/ 0.037633%
+                  loop 49 (420 invocations): 1785397153	/ 15.771152%	/ 0.037550%
+                madd + madd_inv
+                  loop 51 (210 invocations): 2342160751	/ 20.689275%	/ 0.098520%
+                  loop 52 (210 invocations): 2338839993	/ 20.659942%	/ 0.098381%
+  loop 83 (1 invocations): 394304960	/ 3.483059%	/ 3.483059%
+    quantum_bmeasure
+      quantum_state_collapse
+        loop 77 (26 invocations): 280888059	/ 2.481200%	/ 0.095431%
+      
+throughout:
+quantum_cnot
+  loop 13 (5296 invocations): 1513387789	/ 13.368381%	/ 0.002524%
+
+quantum_toffoli
+  loop 14 (20806 invocations): 6353137752	/ 56.119896%	/ 0.002697%
+
+quantum_sigma_x
+  loop 17 (8599 invocations): 2054515135	/ 18.148383%	/ 0.002111%
+
+quantum_swaptheleads
+  loop 21 (210 invocations): 826863877	/ 7.304031%	/ 0.034781%
+
+quantum_swaptheleads_omuln_controlled
+  loop 22 (15 invocations): 126108704	/ 1.113970%	/ 0.074265%

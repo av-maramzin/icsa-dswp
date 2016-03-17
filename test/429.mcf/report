@@ -1,0 +1,10 @@
+Total runtime: 11274359897
+Time for loop 8 (1 invocations): 11100667340	/ 98.459402%	/ 98.459402%  // mcf.c global_opt
+  Time for loop 28 (2 invocations): 8844307334	/ 78.446204%	/ 39.223102%  // psimplex.c primal_net_simplex
+    primal_bea_mpp
+      Time for loop 24 (118645 invocations): 240967185	/ 2.137303%	/ 0.000018%  // pbeampp.c primal_bea_mpp
+      Time for loop 22 (118647 invocations): 5779836666	/ 51.265320%	/ 0.000432%  // pbeampp.c primal_bea_mpp
+      Time for loop 21 (4962334 invocations): 1020558380	/ 9.052029%	/ 0.000002%  // pbeampp.c sort_basket
+    Time for loop 11 (596 invocations): 817407070	/ 7.250142%	/ 0.012165%  // mcfutil.c refresh_potential
+  Time for loop 5 (2 invocations): 1950893542	/ 17.303808%	/ 8.651904%  // implicit.c price_out_impl
+    Time for loop 1 (2393292 invocations): 1265318939	/ 11.222978%	/ 0.000005%  // implicit.c insert_new_arc
