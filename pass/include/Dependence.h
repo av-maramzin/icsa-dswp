@@ -42,6 +42,10 @@ public:
     Nodes.erase(Value);
   }
 
+  void removeEdge(const ValueType *From, const ValueType *To) {
+    Nodes.at(From).erase(To);
+  }
+
   /// Checks if node B depends on node A.
   bool dependsOn(const ValueType *A, const ValueType *B) {
     return Nodes[A].find(B) != Nodes[A].end();

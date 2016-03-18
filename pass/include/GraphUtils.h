@@ -11,6 +11,9 @@ using std::set;
 #include <vector>
 using std::vector;
 
+#include <queue>
+using std::queue;
+
 #include <algorithm>
 using std::find;
 
@@ -82,6 +85,7 @@ private:
       }
     }
   }
+
 public:
   // Reverse all edges in `g` and return that as a new graph.
   static GraphType transpose(const GraphType &g) {
@@ -125,6 +129,34 @@ public:
     }
 
     return component;
+  }
+
+  static vector<const ValueType *> topsort(const GraphType &g) {
+    GraphType gt = transpose(g);
+    vector<const ValueType *> result;
+    queue<const ValueType *> frontier;
+
+    for (auto I = gt.nodes_cbegin(), E = gt.nodes_cend(); I != E; ++I) {
+      if (!I->second.empty())
+        continue;
+      frontier.push(I->first);
+    }
+
+    while (!frontier.empty()) {
+      auto n = frontier.front();
+      frontier.pop();
+      result.push_back(n);
+      auto deps = g.getDependants(n);
+      for (auto I = deps.begin(), E = deps.end(); I != E; ++I) {
+        auto m = *I;
+        gt.removeEdge(m, n);
+        if (gt.getDependants(m).empty()) {
+          frontier.push(m);
+        }
+      }
+    }
+
+    return result;
   }
 };
 }
