@@ -7,6 +7,7 @@ using llvm::Function;
 #include "llvm/Analysis/LoopInfo.h"
 using llvm::Loop;
 using llvm::LoopInfo;
+using llvm::LoopInfoWrapperPass;
 
 #include "llvm/Pass.h"
 using llvm::FunctionPass;
@@ -20,7 +21,7 @@ namespace icsa {
 
 class DecoupleLoopsPass : public FunctionPass {
 private:
-  map<const Function *, LoopInfo> LI;
+  map<const Function *, LoopInfo *> LI;
   map<const Loop *, set<const set<const Instruction *> *>> LoopToIterScc;
   map<const Loop *, set<const set<const Instruction *> *>> LoopToWorkScc;
 
@@ -33,10 +34,11 @@ public:
 
   void getAnalysisUsage(AnalysisUsage &Info) const override {
     Info.setPreservesAll();
+    Info.addRequired<LoopInfoWrapperPass>();
     Info.addRequired<PDGSCCGraphPass>();
   }
 
-  const LoopInfo &getLI(const Function *F) { return LI[F]; }
+  LoopInfo *getLI(const Function *F) { return LI[F]; }
   const map<const Loop *, set<const set<const Instruction *> *>> &
   getLoopToIterScc() {
     return LoopToIterScc;

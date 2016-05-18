@@ -35,12 +35,12 @@ struct DecoupleSourceSplitPrinter : public FunctionPass {
   bool runOnFunction(Function &F) override {
     DecoupleLoopsPass &DLP = Pass::getAnalysis<DecoupleLoopsPass>();
 
-    const LoopInfo &LI = DLP.getLI(&F);
+    const LoopInfo *LI = DLP.getLI(&F);
 
     DIFile *File = nullptr; // The file in which this loop is defined.
 
     raw_os_ostream roos(cout);
-    for (Loop *L : LI) {
+    for (Loop *L : *LI) {
       // Ignore loops we cannot decouple.
       if (!DLP.hasWork(L))
         continue;

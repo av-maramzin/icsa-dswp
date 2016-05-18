@@ -48,7 +48,7 @@ struct DecoupleLoopsPrinter : public FunctionPass {
   bool runOnFunction(Function &F) override {
     DecoupleLoopsPass &DLP = Pass::getAnalysis<DecoupleLoopsPass>();
 
-    const LoopInfo &LI = DLP.getLI(&F);
+    const LoopInfo *LI = DLP.getLI(&F);
 
     DIFile *File = nullptr; // The file in which this loop is defined.
     vector<int> lines;      // Line per instruction in the order of traversal.
@@ -62,7 +62,7 @@ struct DecoupleLoopsPrinter : public FunctionPass {
     int bb_count = 0;
     int loop_count = 0;
 
-    for (Loop *L : LI) {
+    for (Loop *L : *LI) {
       // Ignore loops we cannot decouple.
       if (!DLP.hasWork(L))
         continue;

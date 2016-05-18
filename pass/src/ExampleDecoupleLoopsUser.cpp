@@ -35,10 +35,10 @@ struct ExampleDecoupleLoopsUser : public FunctionPass {
   bool runOnFunction(Function &F) override {
     DecoupleLoopsPass &DLP = Pass::getAnalysis<DecoupleLoopsPass>();
 
-    const LoopInfo &LI = DLP.getLI(&F);
+    const LoopInfo *LI = DLP.getLI(&F);
 
     raw_os_ostream roos(cout);
-    for (Loop *L : LI) {
+    for (Loop *L : *LI) {
       // Ignore loops we cannot decouple.
       if (!DLP.hasWork(L)) continue;
       for (Loop::block_iterator BI = L->block_begin(), BE = L->block_end();

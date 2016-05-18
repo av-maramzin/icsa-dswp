@@ -53,7 +53,8 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
 
   DominatorTree DT;
   DT.recalculate(F);
-  LI[&F].Analyze(DT);
+  //LI[&F]->Analyze(DT);
+  LI[&F] = &(getAnalysis<LoopInfoWrapperPass>().getLoopInfo());
   DT.releaseMemory();
 
   // Given:
@@ -68,7 +69,7 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
   // 1: SCC -> Loop
 
   map<SccConstPtr, const Loop *> SccToLoop;
-  for (Loop *L : LI[&F]) {
+  for (Loop *L : *(LI[&F])) {
     for (Loop::block_iterator BI = L->block_begin(), BE = L->block_end();
          BI != BE; ++BI) {
       BasicBlock *BB = *BI;
