@@ -9,7 +9,7 @@ PROJECT_INSTALL_REL_DIR="install"
 
 echo "project root dir: ${PROJECT_ROOT}"
 echo "project relative build dir: ${PROJECT_BUILD_REL_DIR}"
-echo "project relative install dir: ${PROJECT_INSTALL_REL_DIR}"
+echo "project relative install dir: ${PROJECT_INSTALL_DIR}"
 
 if [ ! -d "${PROJECT_BUILD_REL_DIR}" ]; then
   echo "creating build directory"
@@ -27,7 +27,7 @@ if [ ! -d "${PROJECT_BUILD_REL_DIR}" ]; then
 #- CMAKE_EXPORT_COMPILE_COMMANDS exports the project's compilation db
 #  (e.g. use with YCM)
 
-LINKER_FLAGS="-Wl,-L$(llvm-config --libdir) -lc++ -lc++abi" 
+LINKER_FLAGS="-Wl,-rpath-link=$(llvm-config --libdir) -lc++ -lc++abi" 
 
   CC=clang CXX=clang++ \
   cmake \
@@ -39,7 +39,8 @@ LINKER_FLAGS="-Wl,-L$(llvm-config --libdir) -lc++ -lc++abi"
     -DCMAKE_EXE_LINKER_FLAGS="${LINKER_FLAGS}" \
     -DCMAKE_SHARED_LINKER_FLAGS="${LINKER_FLAGS}" \
     -DCMAKE_MODULE_LINKER_FLAGS="${LINKER_FLAGS}" \
-    -DCMAKE_INSTALL_PREFIX=../"${PROJECT_INSTALL_REL_DIR}" \
+    -DCMAKE_INSTALL_RPATH="$(llvm-config --libdir)" \
+    -DCMAKE_INSTALL_PREFIX="${PROJECT_INSTALL_DIR}" \
     "${PROJECT_ROOT}"
 
   popd # ${PROJECT_BUILD_REL_DIR}
