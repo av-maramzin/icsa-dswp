@@ -24,11 +24,12 @@ private:
   map<const Function *, LoopInfo *> LI;
   map<const Loop *, set<const set<const Instruction *> *>> LoopToIterScc;
   map<const Loop *, set<const set<const Instruction *> *>> LoopToWorkScc;
+  PDGSCCGraphPass *PSGP;
 
 public:
   static char ID;
 
-  DecoupleLoopsPass() : FunctionPass(ID) {}
+  DecoupleLoopsPass() : FunctionPass(ID), PSGP(nullptr) {}
 
   bool runOnFunction(Function &F) override;
 

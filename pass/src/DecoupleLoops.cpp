@@ -48,8 +48,8 @@ RegisterPass<DecoupleLoopsPass> DecoupleLoopsRegister(
 bool DecoupleLoopsPass::runOnFunction(Function &F) {
   typedef const set<const Instruction *> *SccConstPtr;
 
-  const PDGSCCGraphPass &PSGP = Pass::getAnalysis<PDGSCCGraphPass>();
-  const DependenceGraph<set<const Instruction *>> &PSG = PSGP.getPSG();
+  PSGP = &(Pass::getAnalysis<PDGSCCGraphPass>());
+  const DependenceGraph<set<const Instruction *>> &PSG = PSGP->getPSG();
 
   DominatorTree DT;
   DT.recalculate(F);
@@ -74,7 +74,7 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
          BI != BE; ++BI) {
       BasicBlock *BB = *BI;
       for (Instruction &Inst : *BB) {
-        SccToLoop[PSGP.getSCC(&Inst)] = L;
+        SccToLoop[PSGP->getSCC(&Inst)] = L;
       }
     }
   }
@@ -111,14 +111,12 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
 }
 
 bool DecoupleLoopsPass::isWork(const Instruction &Inst, const Loop *L) {
-  const PDGSCCGraphPass &PSGP = Pass::getAnalysis<PDGSCCGraphPass>();
-  return LoopToWorkScc[L].find(PSGP.getSCC(&Inst)) !=
+  return LoopToWorkScc[L].find(PSGP->getSCC(&Inst)) !=
       LoopToWorkScc[L].end();
 }
 
 bool DecoupleLoopsPass::isIter(const Instruction &Inst, const Loop *L) {
-  const PDGSCCGraphPass &PSGP = Pass::getAnalysis<PDGSCCGraphPass>();
-  return LoopToIterScc[L].find(PSGP.getSCC(&Inst)) !=
+  return LoopToIterScc[L].find(PSGP->getSCC(&Inst)) !=
       LoopToIterScc[L].end();
 }
 }
