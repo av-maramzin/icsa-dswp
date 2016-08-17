@@ -50,9 +50,11 @@ public:
   }
 
   // Is Inst a work instruction in the loop L?
+  bool isWork(const Instruction &Inst, const Loop *L) const;
   bool isWork(const Instruction &Inst, const Loop *L);
 
   // Is Inst an iter instruction in the loop L?
+  bool isIter(const Instruction &Inst, const Loop *L) const;
   bool isIter(const Instruction &Inst, const Loop *L);
 
   // Does loop L have work instructions?

@@ -110,13 +110,25 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
   return false;
 }
 
+bool DecoupleLoopsPass::isWork(const Instruction &Inst, const Loop *L) const {
+  const auto &LWSCC = LoopToWorkScc.find(L);
+  if (LWSCC == LoopToWorkScc.end()) return false;
+  return (LWSCC->second).find(PSGP->getSCC(&Inst)) != (LWSCC->second).end();
+}
+
 bool DecoupleLoopsPass::isWork(const Instruction &Inst, const Loop *L) {
-  return LoopToWorkScc[L].find(PSGP->getSCC(&Inst)) !=
-      LoopToWorkScc[L].end();
+  return static_cast<const DecoupleLoopsPass *>(this)->isWork(Inst, L);
+}
+
+bool DecoupleLoopsPass::isIter(const Instruction &Inst, const Loop *L) const {
+  const auto&LISCC = LoopToIterScc.find(L);
+  if (LISCC == LoopToIterScc.end()) return false;
+  return (LISCC->second).find(PSGP->getSCC(&Inst)) != (LISCC->second).end();
 }
 
 bool DecoupleLoopsPass::isIter(const Instruction &Inst, const Loop *L) {
-  return LoopToIterScc[L].find(PSGP->getSCC(&Inst)) !=
-      LoopToIterScc[L].end();
+  return static_cast<const DecoupleLoopsPass *>(this)->isIter(Inst, L);
 }
+
 }
+
