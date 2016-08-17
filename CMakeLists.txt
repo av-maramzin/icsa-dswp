@@ -15,3 +15,6 @@ endforeach()
 
 add_subdirectory(pass)
 add_subdirectory(runtime)
+
+install(DIRECTORY "pass/include" DESTINATION .)
+

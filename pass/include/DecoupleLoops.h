@@ -24,11 +24,12 @@ private:
   map<const Function *, LoopInfo *> LI;
   map<const Loop *, set<const set<const Instruction *> *>> LoopToIterScc;
   map<const Loop *, set<const set<const Instruction *> *>> LoopToWorkScc;
+  PDGSCCGraphPass *PSGP;
 
 public:
   static char ID;
 
-  DecoupleLoopsPass() : FunctionPass(ID) {}
+  DecoupleLoopsPass() : FunctionPass(ID), PSGP(nullptr) {}
 
   bool runOnFunction(Function &F) override;
 
@@ -49,9 +50,11 @@ public:
   }
 
   // Is Inst a work instruction in the loop L?
+  bool isWork(const Instruction &Inst, const Loop *L) const;
   bool isWork(const Instruction &Inst, const Loop *L);
 
   // Is Inst an iter instruction in the loop L?
+  bool isIter(const Instruction &Inst, const Loop *L) const;
   bool isIter(const Instruction &Inst, const Loop *L);
 
   // Does loop L have work instructions?
