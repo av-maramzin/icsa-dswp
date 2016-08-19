@@ -51,11 +51,11 @@ bool DecoupleLoopsPass::runOnFunction(Function &F) {
   PSGP = &(Pass::getAnalysis<PDGSCCGraphPass>());
   const DependenceGraph<set<const Instruction *>> &PSG = PSGP->getPSG();
 
-  DominatorTree DT;
-  DT.recalculate(F);
+  //DominatorTree DT;
+  //DT.recalculate(F);
   //LI[&F]->Analyze(DT);
   LI[&F] = &(getAnalysis<LoopInfoWrapperPass>().getLoopInfo());
-  DT.releaseMemory();
+  //DT.releaseMemory();
 
   // Given:
   // Inst -> SCC

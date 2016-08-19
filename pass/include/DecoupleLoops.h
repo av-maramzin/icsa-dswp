@@ -39,7 +39,16 @@ public:
     Info.addRequired<PDGSCCGraphPass>();
   }
 
-  LoopInfo *getLI(const Function *F) { return LI[F]; }
+  const LoopInfo *getLI(const Function *F) const {
+    const auto &found = LI.find(F);
+    if (LI.end() == found) return nullptr;
+    return found->second;
+  }
+
+  LoopInfo *getLI(const Function *F) {
+    return const_cast<LoopInfo *>(static_cast<const DecoupleLoopsPass *>(this)->getLI(F));
+  }
+
   const map<const Loop *, set<const set<const Instruction *> *>> &
   getLoopToIterScc() {
     return LoopToIterScc;
@@ -58,8 +67,14 @@ public:
   bool isIter(const Instruction &Inst, const Loop *L);
 
   // Does loop L have work instructions?
+  bool hasWork(const Loop *L) const {
+    const auto &found = LoopToWorkScc.find(L);
+    if (LoopToWorkScc.end() == found) return false;
+    return (found->second).size() != 0;
+  }
+
   bool hasWork(const Loop *L) {
-    return LoopToWorkScc[L].size() != 0;
+    return static_cast<const DecoupleLoopsPass *>(this)->hasWork(L);
   }
 };
 }
