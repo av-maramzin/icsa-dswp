@@ -76,6 +76,14 @@ public:
   bool hasWork(const Loop *L) {
     return static_cast<const DecoupleLoopsPass *>(this)->hasWork(L);
   }
+
+  void releaseMemory() override {
+    LoopToWorkScc.clear();
+    LoopToIterScc.clear();
+
+    return;
+  }
+
 };
 }
 
